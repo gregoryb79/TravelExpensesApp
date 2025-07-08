@@ -12,6 +12,9 @@ const defaultCurrencies: Currency[] = [
   { code: 'DKK', name: 'Danish Krone', symbol: 'kr', exchangeRate: 1.0 }
 ];
 
+const baseCurrency = "ILS";
+const localCurrency = "EUR";
+
 export function getCurrencies(): Currency[] {
   return defaultCurrencies;
 }
@@ -31,7 +34,12 @@ export async function updateExchangeRates(currencies: Currency[]): Promise<Curre
         const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
         const data = await response.json();
         const rates = data.rates;
+        if (!rates) {
+            throw new Error('No exchange rates found in the response');
+        }
         console.log('Exchange rates fetched:', rates);
+        await AsyncStorage.setItem('exchangeRates', JSON.stringify(rates));
+        console.log('Exchange rates saved to AsyncStorage');        
         const updatedCurrencies = currencies.map(currency => {
             if (rates[currency.code]) {
                 return { ...currency, exchangeRate: rates[currency.code] };
@@ -47,6 +55,22 @@ export async function updateExchangeRates(currencies: Currency[]): Promise<Curre
       
 }
 
+export async function getAllAwailableCurrencies(): Promise<string[]> {
+    try {
+        const result = await AsyncStorage.getItem('exchangeRates');
+        if (result) {
+            const rates = JSON.parse(result);
+            const listOfCurrenices = Object.keys(rates);
+            return listOfCurrenices;
+        } else {
+            console.log('No currencies found in AsyncStorage, returning default currencies');
+            return getCurrenciesList();
+        }
+    } catch (error) {
+        console.error('Error retrieving currencies from AsyncStorage:', error);
+        return getCurrenciesList();
+    }
+}
 
 export async function setupData() {
     //FOR DEV PURPOSES ONLY
@@ -85,15 +109,22 @@ export async function setupData() {
     
     const updatedExchangeRates:Currency[] = result ? JSON.parse(result) : getCurrencies();
 
-
-
-    await AsyncStorage.setItem('baseCurrencie', JSON.stringify(updatedExchangeRates.find(currency => currency.code === 'ILS')));
-    await AsyncStorage.setItem('localCurrencie', JSON.stringify(updatedExchangeRates.find(currency => currency.code === 'EUR')));
-    
+    const chekbaseCurrency = await AsyncStorage.getItem('baseCurrency');
+    if (!chekbaseCurrency) {
+        console.log('Base currency not found in AsyncStorage, setting default base currency');
+        await AsyncStorage.setItem('baseCurrency', JSON.stringify(updatedExchangeRates.find(currency => currency.code === baseCurrency)));
+    } else {
+        console.log('Base currency already set:', JSON.parse(chekbaseCurrency));
+    }
+    const chekLocalCurrency = await AsyncStorage.getItem('localCurrency');
+    if (!chekLocalCurrency) {
+        console.log('Local currency not found in AsyncStorage, setting default local currency');
+        await AsyncStorage.setItem('localCurrency', JSON.stringify(updatedExchangeRates.find(currency => currency.code === localCurrency)));
+    }    
 }
 
-export async function getBasicCurrencie() : Promise<Currency> {
-    const result = await AsyncStorage.getItem('baseCurrencie');
+export async function getBasicCurrency() : Promise<Currency> {
+    const result = await AsyncStorage.getItem('baseCurrency');
     if (!result) {
         throw new Error('Base currency not found in AsyncStorage');
     }    
@@ -102,8 +133,8 @@ export async function getBasicCurrencie() : Promise<Currency> {
     return baseCurrencie;
 }
 
-export async function getLocalCurrencie() : Promise<Currency> {
-    const result = await AsyncStorage.getItem('localCurrencie');
+export async function getLocalCurrency() : Promise<Currency> {
+    const result = await AsyncStorage.getItem('localCurrency');
     if (!result) {
         throw new Error('Base currency not found in AsyncStorage');
     }    

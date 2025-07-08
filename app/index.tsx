@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput } from 
 import { Link } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { getBasicCurrencie, getCurrencies, getCurrenciesList, getLocalCurrencie } from '../utils/currencyUtils';
+import { getBasicCurrency, getCurrencies, getCurrenciesList, getLocalCurrency } from '../utils/currencyUtils';
 import { Currency } from '../types/currency';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { calcTotal, getCategories, getExpenses, getRecentExpenses } from '../utils/expenseUtils';
@@ -27,14 +27,14 @@ export default function HomeScreen() {
     useEffect(() => {
         async function fetchSettings() {
             try {
-                const result = await getBasicCurrencie();
+                const result = await getBasicCurrency();
                 setBaseCurrency(result);
                 console.log('Base currency:', result);
             } catch (error) {
                 console.error('Error fetching base currency:', error);
             }
             try {
-                const result = await getLocalCurrencie();
+                const result = await getLocalCurrency();
                 setLocalCurrency(result);
                 setCurrency(result?.symbol || '$');
                 console.log('Local currency:', result);
@@ -207,8 +207,7 @@ const styles = StyleSheet.create({
     quickStats: {
         backgroundColor: colors.surface,
         padding: spacing.lg,
-        borderRadius: borderRadius.base,
-        // marginBottom: spacing.md,
+        borderRadius: borderRadius.base,        
     },
     statsTitle: {
         fontSize: typography.md,
@@ -249,9 +248,7 @@ const styles = StyleSheet.create({
         fontWeight: typography.weights.medium,
     },
     recentExpencesContainter: {
-        flex: 1,
-        // marginTop: spacing.base,
-        // marginBottom: spacing.base,
+        flex: 1,        
         padding: spacing.base,
         backgroundColor: colors.surfaceSecondary,
         borderRadius: borderRadius.base,
@@ -269,8 +266,7 @@ const styles = StyleSheet.create({
     amountContainer:{
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        // marginBottom: spacing.sm,
+        justifyContent: 'space-between',        
         padding: spacing.sm,
     },
     amountInput: {
