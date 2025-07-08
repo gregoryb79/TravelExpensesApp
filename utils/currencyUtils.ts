@@ -1,4 +1,5 @@
 import {Currency} from '../types/currency';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const basicCurrencies: Currency[] = [
   { code: 'USD', name: 'US Dollar', symbol: '$', exchangeRate: 1.0 },
@@ -40,11 +41,50 @@ export async function updateExchangeRates(currencies: Currency[]): Promise<Curre
 
 
 export async function setupData() {
+    //FOR DEV PURPOSES ONLY
+        // await AsyncStorage.clear(); 
+        // console.log('AsyncStorage cleared for development purposes');   
+        // try {
+        //     const result = await AsyncStorage.getItem('currencies');
+        //     if (result) {
+        //         console.log('Currencies already set up:', JSON.parse(result));                
+        //     }
+        // } catch (error) {
+        //     console.error('There is nothing in storage', error);
+        // }
+    //****************** */
+    console.log('Setting up data...');
     const currenciesArray = getBasicCurrencies();
-    console.log('Basic Currencies:', currenciesArray);
+    console.log('Basic Currencies:', currenciesArray.map(currency => currency.code));
     const updatedExchangeRates = await updateExchangeRates(currenciesArray);
-    console.log('Updated Exchange Rates:', updatedExchangeRates);
+    console.log('UExchange rates updadted');
+
+    await AsyncStorage.setItem('currencies', JSON.stringify(updatedExchangeRates));
+    console.log('Currencies saved to AsyncStorage');
+
+    await AsyncStorage.setItem('baseCurrencie', JSON.stringify(updatedExchangeRates.find(currency => currency.code === 'ILS')));
+    await AsyncStorage.setItem('localCurrencie', JSON.stringify(updatedExchangeRates.find(currency => currency.code === 'EUR')));
     
+}
+
+export async function getBasicCurrencie() : Promise<Currency> {
+    const result = await AsyncStorage.getItem('baseCurrencie');
+    if (!result) {
+        throw new Error('Base currency not found in AsyncStorage');
+    }    
+    const baseCurrencie = JSON.parse(result);    
+    console.log('Base currency retrieved:', baseCurrencie);
+    return baseCurrencie;
+}
+
+export async function getLocalCurrencie() : Promise<Currency> {
+    const result = await AsyncStorage.getItem('localCurrencie');
+    if (!result) {
+        throw new Error('Base currency not found in AsyncStorage');
+    }    
+    const localCurrencie = JSON.parse(result);    
+    console.log('Local currency retrieved:', localCurrencie);
+    return localCurrencie;
 }
 
 

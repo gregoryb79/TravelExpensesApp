@@ -1,10 +1,9 @@
-import { Currency } from './currency';
-
 export type Expense = {
   id: string;
-  amount: string;
+  amount: number;
   currency: string;
   category: string;
   description?: string;
-  date: string;
+  created_at: string;
 };
+
