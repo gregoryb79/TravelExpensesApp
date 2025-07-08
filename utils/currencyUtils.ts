@@ -1,7 +1,7 @@
 import {Currency} from '../types/currency';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const basicCurrencies: Currency[] = [
+const defaultCurrencies: Currency[] = [
   { code: 'USD', name: 'US Dollar', symbol: '$', exchangeRate: 1.0 },
   { code: 'ILS', name: 'Israeli Shekel', symbol: '₪', exchangeRate: 1.0 },
   { code: 'EUR', name: 'Euro', symbol: '€', exchangeRate: 1.0 },
@@ -12,8 +12,16 @@ const basicCurrencies: Currency[] = [
   { code: 'DKK', name: 'Danish Krone', symbol: 'kr', exchangeRate: 1.0 }
 ];
 
-export function getBasicCurrencies(): Currency[] {
-  return basicCurrencies;
+export function getCurrencies(): Currency[] {
+  return defaultCurrencies;
+}
+
+export async function getCurrenciesList(): Promise<string[]>{
+    const currencies = getCurrencies();
+    const currenciesList = currencies.map(currency => (
+        currency.code
+    ));
+    return currenciesList;
 }
 
 export async function updateExchangeRates(currencies: Currency[]): Promise<Currency[]> {
@@ -62,7 +70,7 @@ export async function setupData() {
     
     if (shouldUpdate) {
         console.log('Updating exchange rates...');
-        const currenciesArray = getBasicCurrencies();
+        const currenciesArray = getCurrencies();
         const updatedExchangeRates = await updateExchangeRates(currenciesArray);
         console.log('UExchange rates updadted');
 
@@ -75,7 +83,7 @@ export async function setupData() {
       
     const result = await AsyncStorage.getItem('currencies');
     
-    const updatedExchangeRates:Currency[] = result ? JSON.parse(result) : getBasicCurrencies();
+    const updatedExchangeRates:Currency[] = result ? JSON.parse(result) : getCurrencies();
 
 
 

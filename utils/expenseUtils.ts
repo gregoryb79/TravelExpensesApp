@@ -1,9 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Expense } from '../types/expense';
 import { get } from 'react-native/Libraries/TurboModule/TurboModuleRegistry';
-import { getBasicCurrencies } from './currencyUtils';
+import { getCurrencies } from './currencyUtils';
 
-export const expenseCategories = ["Groceries", "Souvenirs", "Eating Out & TA", "Beer and Coffee", "Gas + Parking", "Attractions"];
+export const defaultExpenseCategories = ["Groceries", "Souvenirs", "Eating Out & TA", "Beer and Coffee", "Gas + Parking", "Attractions"];
 
 const expenses = [] as Expense[];
 
@@ -12,12 +12,17 @@ export async function addExpense(expense: Expense) {
   await saveExpenses();
 }
 
+export async function getCategories(): Promise<string[]> {
+  
+  return defaultExpenseCategories;
+}
+
 export async function getExpenses(): Promise<Expense[]> {
   return mockExpenses; // For now, return mock expenses
 }
 
 export async function calcTotal(baseCurrencyCode: string): Promise<number> {
-  const basicCurrencies = getBasicCurrencies();
+  const basicCurrencies = getCurrencies();
   const baseCurrency = basicCurrencies.find(curr => curr.code === baseCurrencyCode);
      
   if (!baseCurrency) {
@@ -47,7 +52,7 @@ export async function calcTotal(baseCurrencyCode: string): Promise<number> {
 
 export async function getRecentExpenses(): Promise<Expense[]> {
 
-  const basicCurrencies = getBasicCurrencies();
+  const basicCurrencies = getCurrencies();
   const recentExpenses = mockExpenses.slice(0, 10).map((expense) => {    
     const currency = basicCurrencies.find(curr => curr.code === expense.currency);      
     return {

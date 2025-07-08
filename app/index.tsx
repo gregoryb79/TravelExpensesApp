@@ -1,12 +1,14 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput } from 'react-native';
 import { Link } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { getBasicCurrencie, getLocalCurrencie } from '../utils/currencyUtils';
+import { getBasicCurrencie, getCurrencies, getCurrenciesList, getLocalCurrencie } from '../utils/currencyUtils';
 import { Currency } from '../types/currency';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { calcTotal, getExpenses, getRecentExpenses } from '../utils/expenseUtils';
+import { calcTotal, getCategories, getExpenses, getRecentExpenses } from '../utils/expenseUtils';
 import { Expense } from '../types/expense';
+import { Picker } from '@react-native-picker/picker';
+import { colors, typography, spacing, borderRadius } from '../styles/tokens';
 
 export default function HomeScreen() {
 
@@ -14,6 +16,13 @@ export default function HomeScreen() {
     const [localCurrency, setLocalCurrency] = useState<Currency>();
     const [recentExpenses, setRecentExpenses] = useState<Expense[]>([]); 
     const [totalSpent, setTotalSpent] = useState<number>(0);
+    const [categories, setCategories] = useState<string[]>([]);
+    const [currenciesList, setCurrenciesList] = useState<string[]>([]);
+
+    const [amount, setAmount] = useState('0.00');
+    const [description, setDescription] = useState('');
+    const [category, setCategory] = useState('');
+    const [currency, setCurrency] = useState('');
     
     useEffect(() => {
         async function fetchSettings() {
@@ -27,6 +36,7 @@ export default function HomeScreen() {
             try {
                 const result = await getLocalCurrencie();
                 setLocalCurrency(result);
+                setCurrency(result?.symbol || '$');
                 console.log('Local currency:', result);
             } catch (error) {
                 console.error('Error fetching base currency:', error);
@@ -40,35 +50,90 @@ export default function HomeScreen() {
             } catch (error) {
                 console.error('Error fetching base currency:', error);
             }
-            try {
-                
+            try {                
                 const total = await calcTotal(localCurrency?.code||'USD');
                 setTotalSpent(total);
                 console.log('Total spent:', total);
             } catch (error) {
                 console.error('Error fetching total spent:', error);
             }
+            try{
+                const result = await getCurrenciesList();
+                setCurrenciesList(result);
+                console.log('Currencies list:', result);
+            }catch (error) {
+                console.error('Error fetching currencies list:', error);
+            }
+            try{
+                const result = await getCategories();
+                setCategories(result);
+                setCategory(result[0] || ''); 
+                console.log('Categories:', result);
+            }catch (error) {
+                console.error('Error fetching categories:', error);
+            }
         }
         fetchSettings();
 
     }, []);
 
+    function handleExpenceSubmit() {
+        console.log('Expense submitted:');
+        console.log(`Amount: ${amount}`);
+        console.log(`Description: ${description}`);
+        console.log(`Category: ${category}`);
+        setAmount('0.00');
+        setDescription('');
+        setCategory(categories[0] || '');
+    }
+
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>      
+    <SafeAreaView style={styles.container} edges={['bottom']}>      
       
         <View style={styles.quickStats}>
             <Text style={styles.statsTitle}>{`💰 Total Spent: ${baseCurrency?.symbol} ${totalSpent.toFixed(2)}`}</Text>
-            <Text style={styles.statsSubtitle}>🌍 Current Trip: Not set</Text> 
-            {/* <Text style={styles.statsSubtitle}>{`Local Currency ${localCurrency?.symbol}`}</Text>        */}
+            <Text style={styles.statsSubtitle}>🌍 Current Trip: Not set</Text>            
         </View>
 
-        <View style={styles.buttonContainer}>
-            <Link href="/add-expense" asChild>
-            <TouchableOpacity style={styles.primaryButton}>
-                <Text style={styles.primaryButtonText}>+ Add Expense</Text>
-            </TouchableOpacity>
-            </Link>
+        <View style={styles.addExpenseContainter}>
+            <View style={styles.amountContainer}>
+                <Text style={styles.text_md}>Amount:</Text>
+                <View style={styles.amountInput}>
+                    <TextInput
+                        style={styles.amountInputBox}
+                        value={amount}
+                        onChangeText={setAmount}
+                        keyboardType="numeric"
+                        placeholder="0.00"
+                    />
+                    <Text style={styles.text_md}>{`${localCurrency?.symbol}`}</Text>
+                </View>                              
+            </View>
+            <View style={styles.pickerContainer}>
+                <Text style={styles.text_md}>Category:</Text>
+                <Picker
+                    style={styles.categoriesPicker}                    
+                    selectedValue={category}
+                    mode="dropdown"
+                    onValueChange={setCategory}>
+                        {categories.map((cat) => (
+                            <Picker.Item key={cat} label={cat} value={cat} style={styles.text_md}/>
+                        ))}
+                </Picker>
+            </View>
+            <View style={styles.padding_sm}>
+                <Text style={styles.text_md}>Description:</Text>
+                <TextInput
+                    style={styles.descriptionInput}
+                    value={description}
+                    onChangeText={setDescription}
+                    placeholder="Expense description"
+                />
+            </View>           
+            <TouchableOpacity style={styles.primaryButton} onPress={handleExpenceSubmit}>
+                <Text style={styles.primaryButtonText}>Add Expense</Text>
+            </TouchableOpacity>            
         </View>
 
         <View style={styles.recentExpencesContainter}>
@@ -101,87 +166,141 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         flexDirection: 'column',
-        backgroundColor: '#fff',
-        padding: 20,       
+        backgroundColor: colors.background,
+        padding: spacing.lg,  
+        gap: spacing.md,     
     },
     h3: {
-        fontSize: 20,
-        fontWeight: 'bold',        
-        color: '#333',
+        fontSize: typography.lg,
+        fontWeight: typography.weights.bold,        
+        color: colors.textPrimary,
     },
     padding_bottom_10: {
-        paddingBottom: 10,
+        paddingBottom: spacing.base,
     },
     text_md: {
-        fontSize: 18,
-        color: '#333',
+        fontSize: typography.md,
+        color: colors.textPrimary,
+    },
+    backgroundWhite:{
+        backgroundColor: colors.textWhite,
+    },
+    borderRadius_sm:{
+        borderRadius: borderRadius.sm,
+    },
+    padding_sm: {
+        padding: spacing.sm,
     },
     title: {
-        fontSize: 28,
-        fontWeight: 'bold',
+        fontSize: typography.xxl,
+        fontWeight: typography.weights.bold,
         textAlign: 'center',
-        marginBottom: 8,
-        color: '#333',
+        marginBottom: spacing.sm,
+        color: colors.textPrimary,
     },
     subtitle: {
-        fontSize: 16,
+        fontSize: typography.base,
         textAlign: 'center',
-        marginBottom: 40,
-        color: '#666',
+        marginBottom: spacing.xl,
+        color: colors.textSecondary,
     },
     quickStats: {
-        backgroundColor: '#f5f5f5',
-        padding: 20,
-        borderRadius: 10,
-        marginBottom: 40,
+        backgroundColor: colors.surface,
+        padding: spacing.lg,
+        borderRadius: borderRadius.base,
+        // marginBottom: spacing.md,
     },
     statsTitle: {
-        fontSize: 18,
-        fontWeight: '600',
-        marginBottom: 8,
-        color: '#333',
+        fontSize: typography.md,
+        fontWeight: typography.weights.semibold,
+        marginBottom: spacing.sm,
+        color: colors.textPrimary,
     },
     statsSubtitle: {
-        fontSize: 16,
-        color: '#666',
+        fontSize: typography.base,
+        color: colors.textSecondary,
     },
     buttonContainer: {
-        gap: 15,
+        gap: spacing.md,
     },
     primaryButton: {
-        backgroundColor: '#007AFF',
-        padding: 15,
-        borderRadius: 10,
+        backgroundColor: colors.primary,
+        padding: spacing.md,
+        borderRadius: borderRadius.base,
         alignItems: 'center',
+        minWidth: '60%',
+        alignSelf: 'center',
+        marginBottom: spacing.md,
     },
     primaryButtonText: {
-        color: 'white',
-        fontSize: 18,
-        fontWeight: '600',
+        color: colors.textWhite,
+        fontSize: typography.md,
+        fontWeight: typography.weights.semibold,
     },
     secondaryButton: {
-        backgroundColor: '#f0f0f0',
-        padding: 15,
-        borderRadius: 10,
+        backgroundColor: colors.surfaceLight,
+        padding: spacing.md,
+        borderRadius: borderRadius.base,
         alignItems: 'center',
     },
     secondaryButtonText: {
-        color: '#333',
-        fontSize: 16,
-        fontWeight: '500',
+        color: colors.textPrimary,
+        fontSize: typography.base,
+        fontWeight: typography.weights.medium,
     },
     recentExpencesContainter: {
         flex: 1,
-        marginTop: 10,
-        marginBottom: 10,
-        padding: 10,
-        backgroundColor: '#f9f9f9',
-        borderRadius: 10,
+        // marginTop: spacing.base,
+        // marginBottom: spacing.base,
+        padding: spacing.base,
+        backgroundColor: colors.surfaceSecondary,
+        borderRadius: borderRadius.base,
     },    
     listItem: {
-        padding: 2,
+        padding: spacing.xs,
         flexDirection: 'row',
         justifyContent: 'space-between',               
-        marginBottom: 5,
-    }
+        marginBottom: spacing.sm,
+    },
+    addExpenseContainter: {
+        backgroundColor: colors.surface,
+        borderRadius: borderRadius.base,
+    },
+    amountContainer:{
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        // marginBottom: spacing.sm,
+        padding: spacing.sm,
+    },
+    amountInput: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,          
+    }, 
+    amountInputBox: {
+        fontSize: typography.md,
+        backgroundColor: colors.textWhite,
+        borderRadius: borderRadius.sm,   
+        width: typography.md*5,
+        textAlign: 'right',    
+    },
+    pickerContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: spacing.sm,
+        gap: spacing.sm,
+    },   
+    categoriesPicker: {        
+        flex: 1,        
+        backgroundColor: colors.textWhite,
+        borderRadius: borderRadius.sm,
+        marginBottom: spacing.sm,        
+    },
+    descriptionInput: {
+        backgroundColor: colors.textWhite,
+        borderRadius: borderRadius.sm,
+        padding: spacing.sm,
+        fontSize: typography.md,              
+    },
 });
