@@ -26,13 +26,13 @@ export default function RootLayout() {
    
 
     if (loading) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" />
-        <Text>Initializing app...</Text>        
-      </View>
-    );
-  }
+        return (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <ActivityIndicator size="large" />
+            <Text>Initializing app...</Text>        
+        </View>
+        );
+    }
 
     return (
         <Stack screenOptions= {headerOptions}>

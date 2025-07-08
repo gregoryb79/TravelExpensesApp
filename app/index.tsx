@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, ActivityIndicator } from 'react-native';
 import { Link } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
@@ -9,6 +9,7 @@ import { calcTotal, getCategories, getExpenses, getRecentExpenses } from '../uti
 import { Expense } from '../types/expense';
 import { Picker } from '@react-native-picker/picker';
 import { colors, typography, spacing, borderRadius } from '../styles/tokens';
+import { set } from 'date-fns';
 
 export default function HomeScreen() {
 
@@ -17,15 +18,19 @@ export default function HomeScreen() {
     const [recentExpenses, setRecentExpenses] = useState<Expense[]>([]); 
     const [totalSpent, setTotalSpent] = useState<number>(0);
     const [categories, setCategories] = useState<string[]>([]);
-    const [currenciesList, setCurrenciesList] = useState<string[]>([]);
+    const [currenciesList, setCurrenciesList] = useState<Currency[]>([]);
+    const [loading, setLoading] = useState(true);
 
     const [amount, setAmount] = useState('0.00');
     const [description, setDescription] = useState('');
     const [category, setCategory] = useState('');
-    const [currency, setCurrency] = useState('');
+    const [currency, setCurrency] = useState<Currency>();
     
     useEffect(() => {
         async function fetchSettings() {
+
+            let localCurrencyResult: Currency | undefined;
+
             try {
                 const result = await getBasicCurrency();
                 setBaseCurrency(result);
@@ -36,8 +41,9 @@ export default function HomeScreen() {
             try {
                 const result = await getLocalCurrency();
                 setLocalCurrency(result);
-                setCurrency(result?.symbol || '$');
-                console.log('Local currency:', result);
+                setCurrency(result);
+                localCurrencyResult = result;
+                console.log('Local currency:', localCurrency);
             } catch (error) {
                 console.error('Error fetching base currency:', error);
             }
@@ -51,7 +57,7 @@ export default function HomeScreen() {
                 console.error('Error fetching base currency:', error);
             }
             try {                
-                const total = await calcTotal(localCurrency?.code||'USD');
+                const total = await calcTotal(localCurrencyResult?.code||'USD');
                 setTotalSpent(total);
                 console.log('Total spent:', total);
             } catch (error) {
@@ -59,8 +65,14 @@ export default function HomeScreen() {
             }
             try{
                 const result = await getCurrenciesList();
-                setCurrenciesList(result);
-                console.log('Currencies list:', result);
+                const reorderedList = result.sort((a, b) => {
+                    if (a.code === localCurrencyResult?.code) return -1;
+                    if (b.code === localCurrencyResult?.code) return 1;
+                    return 0;
+                });
+                
+                setCurrenciesList(reorderedList);
+                console.log('Currencies list obtained',reorderedList);
             }catch (error) {
                 console.error('Error fetching currencies list:', error);
             }
@@ -72,6 +84,7 @@ export default function HomeScreen() {
             }catch (error) {
                 console.error('Error fetching categories:', error);
             }
+            setLoading(false);
         }
         fetchSettings();
 
@@ -82,9 +95,19 @@ export default function HomeScreen() {
         console.log(`Amount: ${amount}`);
         console.log(`Description: ${description}`);
         console.log(`Category: ${category}`);
+        console.log(`Currency: ${currency?.code || 'USD'}`);
         setAmount('0.00');
         setDescription('');
         setCategory(categories[0] || '');
+    }
+
+    if (loading) {
+        return (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <ActivityIndicator size="large" />
+            <Text>Initializing app...</Text>        
+        </View>
+        );
     }
 
 
@@ -107,7 +130,16 @@ export default function HomeScreen() {
                         keyboardType="numeric"
                         placeholder="0.00"
                     />
-                    <Text style={styles.text_md}>{`${localCurrency?.symbol}`}</Text>
+                    {/* <Text style={styles.text_md}>{`${localCurrency?.symbol}`}</Text> */}
+                     <Picker
+                    style={styles.categoriesPicker}                    
+                    selectedValue={currency}
+                    mode="dropdown"
+                    onValueChange={setCurrency}>
+                        {currenciesList.map((cat) => (
+                            <Picker.Item key={cat.code} label={cat.symbol} value={cat} style={styles.text_md}/>
+                        ))}
+                </Picker>
                 </View>                              
             </View>
             <View style={styles.pickerContainer}>

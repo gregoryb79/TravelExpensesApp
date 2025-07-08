@@ -19,12 +19,9 @@ export function getCurrencies(): Currency[] {
   return defaultCurrencies;
 }
 
-export async function getCurrenciesList(): Promise<string[]>{
-    const currencies = getCurrencies();
-    const currenciesList = currencies.map(currency => (
-        currency.code
-    ));
-    return currenciesList;
+export async function getCurrenciesList(): Promise<Currency[]>{
+    const currencies = getCurrencies();    
+    return currencies;
 }
 
 export async function updateExchangeRates(currencies: Currency[]): Promise<Currency[]> {
@@ -63,12 +60,12 @@ export async function getAllAwailableCurrencies(): Promise<string[]> {
             const listOfCurrenices = Object.keys(rates);
             return listOfCurrenices;
         } else {
-            console.log('No currencies found in AsyncStorage, returning default currencies');
-            return getCurrenciesList();
+            console.log('No currencies found in AsyncStorage returning default currencies');
+            return (await getCurrenciesList()).map(currency => currency.code);
         }
     } catch (error) {
         console.error('Error retrieving currencies from AsyncStorage:', error);
-        return getCurrenciesList();
+        return (await getCurrenciesList()).map(currency => currency.code);
     }
 }
 
