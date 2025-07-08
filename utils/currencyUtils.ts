@@ -54,13 +54,30 @@ export async function setupData() {
         // }
     //****************** */
     console.log('Setting up data...');
-    const currenciesArray = getBasicCurrencies();
-    console.log('Basic Currencies:', currenciesArray.map(currency => currency.code));
-    const updatedExchangeRates = await updateExchangeRates(currenciesArray);
-    console.log('UExchange rates updadted');
+    
+    const lastExchaneRatesUpdate = await AsyncStorage.getItem('currenciesLastUpdated');
+    const shouldUpdate = !lastExchaneRatesUpdate || 
+        (Date.now() - new Date(lastExchaneRatesUpdate).getTime()) > (24*60*60*1000); // 24 hours in milliseconds
 
-    await AsyncStorage.setItem('currencies', JSON.stringify(updatedExchangeRates));
-    console.log('Currencies saved to AsyncStorage');
+    
+    if (shouldUpdate) {
+        console.log('Updating exchange rates...');
+        const currenciesArray = getBasicCurrencies();
+        const updatedExchangeRates = await updateExchangeRates(currenciesArray);
+        console.log('UExchange rates updadted');
+
+        await AsyncStorage.setItem('currencies', JSON.stringify(updatedExchangeRates));
+        await AsyncStorage.setItem('currenciesLastUpdated', new Date().toISOString());
+        console.log('Currencies saved to AsyncStorage');               
+    } else {
+        console.log('Exchange rates are up to date, no need to update');
+    }
+      
+    const result = await AsyncStorage.getItem('currencies');
+    
+    const updatedExchangeRates:Currency[] = result ? JSON.parse(result) : getBasicCurrencies();
+
+
 
     await AsyncStorage.setItem('baseCurrencie', JSON.stringify(updatedExchangeRates.find(currency => currency.code === 'ILS')));
     await AsyncStorage.setItem('localCurrencie', JSON.stringify(updatedExchangeRates.find(currency => currency.code === 'EUR')));

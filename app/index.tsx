@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { getBasicCurrencie, getLocalCurrencie } from '../utils/currencyUtils';
 import { Currency } from '../types/currency';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { getExpenses, getRecentExpenses } from '../utils/expenseUtils';
+import { calcTotal, getExpenses, getRecentExpenses } from '../utils/expenseUtils';
 import { Expense } from '../types/expense';
 
 export default function HomeScreen() {
@@ -13,6 +13,7 @@ export default function HomeScreen() {
     const [baseCurrency, setBaseCurrency] = useState<Currency>();
     const [localCurrency, setLocalCurrency] = useState<Currency>();
     const [recentExpenses, setRecentExpenses] = useState<Expense[]>([]); 
+    const [totalSpent, setTotalSpent] = useState<number>(0);
     
     useEffect(() => {
         async function fetchSettings() {
@@ -34,23 +35,32 @@ export default function HomeScreen() {
                 const result = await getRecentExpenses();
                 
                 setRecentExpenses(result);
-                console.log('Recent expenses:', result);
+                console.log('Recent expenses:', result.length);
                 
             } catch (error) {
                 console.error('Error fetching base currency:', error);
+            }
+            try {
+                
+                const total = await calcTotal(localCurrency?.code||'USD');
+                setTotalSpent(total);
+                console.log('Total spent:', total);
+            } catch (error) {
+                console.error('Error fetching total spent:', error);
             }
         }
         fetchSettings();
 
     }, []);
 
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>      
       
         <View style={styles.quickStats}>
-            <Text style={styles.statsTitle}>{`💰 Total Spent: ${baseCurrency?.symbol}0.00`}</Text>
+            <Text style={styles.statsTitle}>{`💰 Total Spent: ${baseCurrency?.symbol} ${totalSpent.toFixed(2)}`}</Text>
             <Text style={styles.statsSubtitle}>🌍 Current Trip: Not set</Text> 
-            <Text style={styles.statsSubtitle}>{`Local Currency ${localCurrency?.symbol}`}</Text>       
+            {/* <Text style={styles.statsSubtitle}>{`Local Currency ${localCurrency?.symbol}`}</Text>        */}
         </View>
 
         <View style={styles.buttonContainer}>
@@ -62,16 +72,14 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.recentExpencesContainter}>
+            <Text style={[styles.h3, styles.padding_bottom_10]}>Recent Expenses</Text>
             <ScrollView>
-                <Text style={styles.h3}>Recent Expenses</Text>
-                {/* <View>Some content</View> */}
                 {recentExpenses.map((expense) => (
                 <View key={expense.id} style={styles.listItem}>
                     <Text style={styles.text_md}>{expense.description}</Text>
                     <Text style={styles.text_md}>{`${expense.amount} ${expense.currency}`}</Text>
                 </View>
-                ))}
-                <Text>Footer</Text>
+                ))}                
             </ScrollView>
         </View>
 
@@ -94,13 +102,15 @@ const styles = StyleSheet.create({
         flex: 1,
         flexDirection: 'column',
         backgroundColor: '#fff',
-        padding: 20,
-        // justifyContent: 'center',
+        padding: 20,       
     },
     h3: {
         fontSize: 20,
         fontWeight: 'bold',        
         color: '#333',
+    },
+    padding_bottom_10: {
+        paddingBottom: 10,
     },
     text_md: {
         fontSize: 18,
@@ -167,10 +177,11 @@ const styles = StyleSheet.create({
         padding: 10,
         backgroundColor: '#f9f9f9',
         borderRadius: 10,
-    },
+    },    
     listItem: {
         padding: 2,
         flexDirection: 'row',
         justifyContent: 'space-between',               
+        marginBottom: 5,
     }
 });

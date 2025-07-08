@@ -16,12 +16,40 @@ export async function getExpenses(): Promise<Expense[]> {
   return mockExpenses; // For now, return mock expenses
 }
 
+export async function calcTotal(baseCurrencyCode: string): Promise<number> {
+  const basicCurrencies = getBasicCurrencies();
+  const baseCurrency = basicCurrencies.find(curr => curr.code === baseCurrencyCode);
+     
+  if (!baseCurrency) {
+    throw new Error(`Currency ${baseCurrency} not found`);
+  }
+
+  const expenses = await getExpenses();
+  const total = expenses.reduce((acc, expense) => {
+    if (expense.currency === baseCurrency.code) {
+      return acc + expense.amount;
+    } else if (expense.currency === 'USD') {      
+      const exchangeRate = baseCurrency.exchangeRate; 
+      return acc + (expense.amount * exchangeRate);
+    } else {
+      const expenseCurrencytoUSD = basicCurrencies.find(curr => curr.code === expense.currency);
+      if (!expenseCurrencytoUSD) {
+        throw new Error(`Currency ${expense.currency} not found`);
+      }
+      const exchangeRate = baseCurrency.exchangeRate*expenseCurrencytoUSD.exchangeRate;
+      return acc + (expense.amount * exchangeRate);
+    }
+  }, 0);
+
+  return total;
+  
+}
+
 export async function getRecentExpenses(): Promise<Expense[]> {
 
   const basicCurrencies = getBasicCurrencies();
   const recentExpenses = mockExpenses.slice(0, 10).map((expense) => {    
-    const currency = basicCurrencies.find(curr => curr.code === expense.currency);  
-    console.log('Currency found:', currency);  
+    const currency = basicCurrencies.find(curr => curr.code === expense.currency);      
     return {
       ...expense,
       currency: currency?.symbol || expense.currency
