@@ -88,8 +88,8 @@ export default function SettingsScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>  
       <View>
-        {currTrip && <Text style={styles.h3}>{`Current trip: ${currTrip?.name}`}</Text>}
-        {!currTrip && <Text style={styles.h3}>No trip selected, create new or select saved.</Text>}            
+        <Text style={styles.h3}>{`Current trip: ${currTrip ? currTrip?.name : "No trip selected, create new or select saved."}`}</Text>
+        {/* {!currTrip && <Text style={styles.h3}>No trip selected, create new or select saved.</Text>}             */}
       </View>
       <View style={styles.newTripForm}>
         <Text>Trip Name</Text>
@@ -118,12 +118,13 @@ export default function SettingsScreen() {
       <View style={styles.recentExpencesContainter}>
         <Text style={[styles.h3, styles.padding_bottom_10]}>Available Trips</Text>
         <ScrollView>
-            {listOfTrips.map((trip) => (
+            {(listOfTrips.length > 0) && listOfTrips.map((trip) => (
               <View key={trip.id} style={styles.listItem}>
                   <Text style={styles.text_md}>{trip.name}</Text>
                   <Text style={styles.text_md}>{new Date(trip.created_at).toLocaleDateString()}</Text>                           
               </View>
-            ))}                
+            ))}   
+            {(listOfTrips.length === 0) && <Text style={styles.h3}>No trips available. Create a new trip.</Text>}             
         </ScrollView>
       </View>
     </SafeAreaView>
