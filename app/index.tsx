@@ -5,11 +5,12 @@ import { useEffect, useState } from 'react';
 import { getBasicCurrency, getCurrencies, getCurrenciesList, getLocalCurrency } from '../utils/currencyUtils';
 import { Currency } from '../types/currency';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { calcTotal, getCategories, getExpenses, getRecentExpenses } from '../utils/expenseUtils';
+import { addExpense, calcTotal, getCategories, getExpenses, getRecentExpenses } from '../utils/expenseUtils';
 import { Expense } from '../types/expense';
 import { Picker } from '@react-native-picker/picker';
 import { colors, typography, spacing, borderRadius } from '../styles/tokens';
 import { set } from 'date-fns';
+import { ca } from 'date-fns/locale';
 
 export default function HomeScreen() {
 
@@ -56,7 +57,7 @@ export default function HomeScreen() {
                 console.log('Recent expenses:', result.length);
                 
             } catch (error) {
-                console.error('Error fetching base currency:', error);
+                console.error('Error fetching recent expences:', error);
             }
             try {                
                 const total = await calcTotal(baseCurrencyResult?.code||'USD');
@@ -92,12 +93,35 @@ export default function HomeScreen() {
 
     }, []);
 
-    function handleExpenceSubmit() {
+    async function handleExpenceSubmit() {
         console.log('Expense submitted:');
         console.log(`Amount: ${amount}`);
         console.log(`Description: ${description}`);
         console.log(`Category: ${category}`);
         console.log(`Currency: ${currency?.code || 'USD'}`);
+        if (!amount || !description || !category || !currency) {
+            console.error('Please fill in all fields');
+            alert('Please fill in all fields');
+            return;
+        }
+
+        try {
+            await addExpense(amount, description, category, currency);
+            console.log('Expense added successfully');
+        }catch (error) {
+            console.error('Error adding expense:', error);
+            alert('Error adding expense');
+            return;
+        }
+        try {
+            const result = await getRecentExpenses();            
+            setRecentExpenses(result);
+            console.log('Recent expenses:', result.length);
+            
+        } catch (error) {
+            console.error('Error fetching recent expences:', error);
+        }
+
         setAmount('');
         setDescription('');
         setCategory(categories[0] || '');

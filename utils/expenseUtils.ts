@@ -2,14 +2,32 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Expense } from '../types/expense';
 import { get } from 'react-native/Libraries/TurboModule/TurboModuleRegistry';
 import { getCurrencies, getCurrenciesList } from './currencyUtils';
+import { Currency } from '../types/currency';
+import uuid from 'react-native-uuid';
 
 export const defaultExpenseCategories = ["Groceries", "Souvenirs", "Eating Out & TA", "Beer and Coffee", "Gas + Parking", "Attractions"];
 
-const expenses = [] as Expense[];
+export async function addExpense(amount: string, description: string, category: string, currency: Currency) {
+  
+  if (!amount || !description || !category || !currency) {
+    throw new Error('Please fill in all fields');
+  }
+  
+  const newExpense: Expense = {
+    id: uuid.v4() as string,
+    amount: parseFloat(amount),
+    currency: currency.code,
+    category,
+    description,
+    created_at: new Date().toISOString()
+  }
 
-export async function addExpense(expense: Expense) {
-  expenses.unshift(expense);  
-  await saveExpenses();
+  
+  const expenses = await getExpenses();
+  console.log('Expences length before adding:', expenses.length);
+  expenses.unshift(newExpense);  
+  console.log('Expences length after adding:', expenses.length);
+  await saveExpenses(expenses);
 }
 
 export async function getCategories(): Promise<string[]> {
@@ -18,8 +36,22 @@ export async function getCategories(): Promise<string[]> {
 }
 
 export async function getExpenses(): Promise<Expense[]> {
-  return mockExpenses; // For now, return mock expenses
+  try {
+    const result = await AsyncStorage.getItem('expenses');
+    if (result) {
+      const storedExpenses: Expense[] = JSON.parse(result);
+      return storedExpenses;
+    }else {
+      console.log('No expenses found in storage');
+      return mockExpenses; 
+    }   
+  } catch (error) {
+    console.error('Error fetching expenses from storage:', error);
+    return mockExpenses; 
+  }
 }
+
+
 
 export async function calcTotal(baseCurrencyCode: string): Promise<number> {
   const basicCurrencies = await getCurrenciesList();
@@ -52,8 +84,9 @@ export async function calcTotal(baseCurrencyCode: string): Promise<number> {
 
 export async function getRecentExpenses(): Promise<Expense[]> {
 
-  const basicCurrencies = getCurrencies();
-  const recentExpenses = mockExpenses.slice(0, 10).map((expense) => {    
+  const basicCurrencies = await getCurrenciesList();
+  const expenses = await getExpenses();
+  const recentExpenses = expenses.slice(0, 10).map((expense) => {    
     const currency = basicCurrencies.find(curr => curr.code === expense.currency);      
     return {
       ...expense,
@@ -61,11 +94,16 @@ export async function getRecentExpenses(): Promise<Expense[]> {
     };
   });
   return recentExpenses;
+  
 }
 
-export async function saveExpenses() {
+export async function saveExpenses(expenses: Expense[] = []): Promise<void> {
   await AsyncStorage.setItem('expenses', JSON.stringify(expenses));
   console.log('Expenses saved:', expenses);
+}
+
+export async function setUpExpenses(){  
+  await saveExpenses(mockExpenses);
 }
 
 const mockExpenses: Expense[] = [

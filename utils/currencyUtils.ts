@@ -1,5 +1,6 @@
 import {Currency} from '../types/currency';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { setUpExpenses } from './expenseUtils';
 
 const defaultCurrencies: Currency[] = [
   { code: 'USD', name: 'US Dollar', symbol: '$', exchangeRate: 1.0 },
@@ -24,7 +25,7 @@ export async function getCurrenciesList(): Promise<Currency[]>{
     const result = await AsyncStorage.getItem('currencies');    
     const currencies:Currency[] = result ? JSON.parse(result) : getCurrencies();   
     return currencies;
-    
+
 }
 
 export async function updateExchangeRates(currencies: Currency[]): Promise<Currency[]> {
@@ -84,6 +85,7 @@ export async function setupData() {
         // } catch (error) {
         //     console.error('There is nothing in storage', error);
         // }
+        // await setUpExpenses();
     //****************** */
     console.log('Setting up data...');
     
