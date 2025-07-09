@@ -74,7 +74,7 @@ export default function HomeScreen() {
                 });
                 
                 setCurrenciesList(reorderedList);
-                console.log('Currencies list obtained',reorderedList);
+                // console.log('Currencies list obtained',reorderedList);
             }catch (error) {
                 console.error('Error fetching currencies list:', error);
             }
@@ -164,7 +164,7 @@ export default function HomeScreen() {
                         {currenciesList.map((cat) => (
                             <Picker.Item key={cat.code} label={cat.symbol} value={cat} style={styles.text_md}/>
                         ))}
-                </Picker>
+                    </Picker>
                 </View>                              
             </View>
             <View style={styles.pickerContainer}>

@@ -37,7 +37,7 @@ export default function RootLayout() {
         <Stack screenOptions= {headerOptions}>
             <Stack.Screen name="index" options={{ title: 'Travel Expences ', headerRight: () => <SettingsButton />}} />
             <Stack.Screen name="expenses" options={{ title: 'Expenses', headerRight: () => <SettingsButton /> }} />                        
-            <Stack.Screen name="settings" options={{ title: 'Settings'}} />                        
+            <Stack.Screen name="settings" options={{ title: 'Settings'}} />                 
         </Stack>
     );
 }
