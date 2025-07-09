@@ -9,8 +9,7 @@ import { addExpense, calcTotal, getCategories, getExpenses, getRecentExpenses } 
 import { Expense } from '../types/expense';
 import { Picker } from '@react-native-picker/picker';
 import { colors, typography, spacing, borderRadius } from '../styles/tokens';
-import { set } from 'date-fns';
-import { ca } from 'date-fns/locale';
+
 
 export default function HomeScreen() {
 
