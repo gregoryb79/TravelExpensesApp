@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Expense } from '../types/expense';
 import { get } from 'react-native/Libraries/TurboModule/TurboModuleRegistry';
-import { getCurrencies } from './currencyUtils';
+import { getCurrencies, getCurrenciesList } from './currencyUtils';
 
 export const defaultExpenseCategories = ["Groceries", "Souvenirs", "Eating Out & TA", "Beer and Coffee", "Gas + Parking", "Attractions"];
 
@@ -22,7 +22,7 @@ export async function getExpenses(): Promise<Expense[]> {
 }
 
 export async function calcTotal(baseCurrencyCode: string): Promise<number> {
-  const basicCurrencies = getCurrencies();
+  const basicCurrencies = await getCurrenciesList();
   const baseCurrency = basicCurrencies.find(curr => curr.code === baseCurrencyCode);
      
   if (!baseCurrency) {
@@ -41,7 +41,7 @@ export async function calcTotal(baseCurrencyCode: string): Promise<number> {
       if (!expenseCurrencytoUSD) {
         throw new Error(`Currency ${expense.currency} not found`);
       }
-      const exchangeRate = baseCurrency.exchangeRate*expenseCurrencytoUSD.exchangeRate;
+      const exchangeRate = baseCurrency.exchangeRate/expenseCurrencytoUSD.exchangeRate;
       return acc + (expense.amount * exchangeRate);
     }
   }, 0);

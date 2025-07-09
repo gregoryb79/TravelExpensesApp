@@ -20,8 +20,11 @@ export function getCurrencies(): Currency[] {
 }
 
 export async function getCurrenciesList(): Promise<Currency[]>{
-    const currencies = getCurrencies();    
+
+    const result = await AsyncStorage.getItem('currencies');    
+    const currencies:Currency[] = result ? JSON.parse(result) : getCurrencies();   
     return currencies;
+    
 }
 
 export async function updateExchangeRates(currencies: Currency[]): Promise<Currency[]> {

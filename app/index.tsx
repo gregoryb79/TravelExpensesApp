@@ -21,7 +21,7 @@ export default function HomeScreen() {
     const [currenciesList, setCurrenciesList] = useState<Currency[]>([]);
     const [loading, setLoading] = useState(true);
 
-    const [amount, setAmount] = useState('0.00');
+    const [amount, setAmount] = useState('');
     const [description, setDescription] = useState('');
     const [category, setCategory] = useState('');
     const [currency, setCurrency] = useState<Currency>();
@@ -30,10 +30,12 @@ export default function HomeScreen() {
         async function fetchSettings() {
 
             let localCurrencyResult: Currency | undefined;
+            let baseCurrencyResult: Currency | undefined;
 
             try {
                 const result = await getBasicCurrency();
                 setBaseCurrency(result);
+                baseCurrencyResult = result;
                 console.log('Base currency:', result);
             } catch (error) {
                 console.error('Error fetching base currency:', error);
@@ -57,7 +59,7 @@ export default function HomeScreen() {
                 console.error('Error fetching base currency:', error);
             }
             try {                
-                const total = await calcTotal(localCurrencyResult?.code||'USD');
+                const total = await calcTotal(baseCurrencyResult?.code||'USD');
                 setTotalSpent(total);
                 console.log('Total spent:', total);
             } catch (error) {
@@ -96,9 +98,10 @@ export default function HomeScreen() {
         console.log(`Description: ${description}`);
         console.log(`Category: ${category}`);
         console.log(`Currency: ${currency?.code || 'USD'}`);
-        setAmount('0.00');
+        setAmount('');
         setDescription('');
         setCategory(categories[0] || '');
+        setCurrency(localCurrency);
     }
 
     if (loading) {
@@ -129,10 +132,9 @@ export default function HomeScreen() {
                         onChangeText={setAmount}
                         keyboardType="numeric"
                         placeholder="0.00"
-                    />
-                    {/* <Text style={styles.text_md}>{`${localCurrency?.symbol}`}</Text> */}
+                    />                    
                      <Picker
-                    style={styles.categoriesPicker}                    
+                    style={styles.currencyPicker}                    
                     selectedValue={currency}
                     mode="dropdown"
                     onValueChange={setCurrency}>
@@ -322,6 +324,13 @@ const styles = StyleSheet.create({
     categoriesPicker: {        
         flex: 1,        
         backgroundColor: colors.textWhite,
+        borderRadius: borderRadius.sm,
+        marginBottom: spacing.sm,        
+    },
+    currencyPicker: {        
+        // flex: 1,        
+        backgroundColor: colors.textWhite,
+        width: typography.md*7,
         borderRadius: borderRadius.sm,
         marginBottom: spacing.sm,        
     },
