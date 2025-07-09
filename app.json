@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "TravelExpensesApp",
-    "slug": "TravelExpensesApp",
+    "slug": "travelexpences",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -20,13 +20,21 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.anonymous.TravelExpensesApp"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-router"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "1633a681-8cfd-46c1-92e5-27c6296c9e28"
+      }
+    },
+    "owner": "gregoryb79"
   }
 }
