@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Trip } from '../types/trip';
 import { Currency } from '../types/currency';
 import uuid from 'react-native-uuid';
+import { slimCurrency } from './currencyUtils';
 
 export async function getCurrentTrip() : Promise<Trip | null> {
   try {
@@ -37,12 +38,13 @@ export async function getTrips() : Promise<Trip[]> {
   } 
 }
 
-export async function saveTrip(tripName: string, currency: Currency): Promise<void> {
+export async function saveTrip(tripName: string, currency: slimCurrency, localCurrencies: slimCurrency[]): Promise<void> {
     try {
         const newTrip: Trip = {
             id: uuid.v4() as string,
             name: tripName,
             baseCurrency: currency,
+            localCurrencies: localCurrencies,
             expenses: [],
             created_at: new Date().toISOString()
         };

@@ -5,12 +5,10 @@ import { styles } from '../styles/styles';
 import { useEffect, useState } from 'react';
 import { Trip } from '../types/trip';
 import { getCurrentTrip, getTrips, saveTrip } from '../utils/tripUtils';
-import { Link } from 'expo-router';
-import { Picker } from '@react-native-picker/picker';
-import { Currency } from '../types/currency';
-import { set } from 'date-fns';
-import { getCurrenciesList } from '../utils/currencyUtils';
-import { se } from 'date-fns/locale';
+import { Link, router } from 'expo-router';
+import { getCurrenciesList, slimCurrency } from '../utils/currencyUtils';
+import { MainButton } from '../components/MainButton';
+import { CurrencyPicker } from '../components/CurrencyPicker';
 
 export default function SettingsScreen() {
 
@@ -18,8 +16,9 @@ export default function SettingsScreen() {
   const [listOfTrips, setListOfTrips] = useState<Trip[]>([]);
 
   const [tripName, setTripName] = useState<string>('');
-  const [currency, setCurrency] = useState<Currency>();
-  const [currenciesList, setCurrenciesList] = useState<Currency[]>([]);
+  const [currency, setCurrency] = useState<slimCurrency>();
+  const [currenciesList, setCurrenciesList] = useState<slimCurrency[]>([]);
+  const [localCurrencies, setLocalCurrencies] = useState<slimCurrency[]>([]);
 
   useEffect(() => {
 
@@ -42,13 +41,15 @@ export default function SettingsScreen() {
       } catch (error) {
         console.error('Error fetching list of trips:', error);
       }
-       try{
-          const result = await getCurrenciesList();
-          setCurrenciesList(result);
-          setCurrency(result[0]);
-        }catch (error) {
-            console.error('Error fetching currencies list:', error);
-        }
+      try{
+        const result = await getCurrenciesList();
+        setCurrenciesList(result);
+        setLocalCurrencies(result);
+        setCurrency(result[0]);
+      }catch (error) {
+          console.error('Error fetching currencies list:', error);
+      }
+
     }
 
 
@@ -64,7 +65,7 @@ export default function SettingsScreen() {
     }
   
     try {
-        await saveTrip( tripName, currency);
+        await saveTrip( tripName, currency, localCurrencies);
         setTripName(''); 
         setCurrency(undefined);             
     } catch (error) {   
@@ -87,12 +88,13 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>  
-      <View>
-        <Text style={styles.h3}>{`Current trip: ${currTrip ? currTrip?.name : "No trip selected, create new or select saved."}`}</Text>
+      <View style={styles.newTripHeader}>
+        <Text style={styles.h3}>Current trip:</Text>
+        <Text style={styles.h3}>{`${currTrip ? currTrip?.name : "No trip selected"}`}</Text>
         {/* {!currTrip && <Text style={styles.h3}>No trip selected, create new or select saved.</Text>}             */}
       </View>
       <View style={styles.newTripForm}>
-        <Text>Trip Name</Text>
+        <Text style={styles.text_md}>Trip Name</Text>
           <TextInput            
               style={styles.descriptionInput}
               value={tripName}
@@ -100,22 +102,40 @@ export default function SettingsScreen() {
               placeholder="Enter Trip Name"
               placeholderTextColor={colors.textSecondary}
           />
-          <Text>Base Currency</Text>
-          <Picker
-              style={styles.currencyPicker}                    
-              selectedValue={currency}
-              mode="dropdown"
-              onValueChange={setCurrency}>
-                  {currenciesList.map((cat) => (
-                      <Picker.Item key={cat.code} label={cat.symbol} value={cat} style={styles.text_md}/>
-                  ))}
-          </Picker>
-          <TouchableOpacity style={styles.primaryButton} onPress={handleTripSubmit}>
-              <Text style={styles.primaryButtonText}>Create Trip</Text>
-          </TouchableOpacity>
+          <View style={styles.baseCurencyContainer}>
+            <Text style={styles.text_md}>Select Base Currency:</Text>
+            <CurrencyPicker 
+                currency={currency} 
+                currenciesList={currenciesList} 
+                extraStyles={{width: typography.md*7}}
+                onValueChange={setCurrency} 
+            /> 
+            {/* <Picker
+                style={styles.currencyPicker}                    
+                selectedValue={currency}
+                mode="dropdown"
+                onValueChange={setCurrency}>
+                    {currenciesList.map((cat) => (
+                        <Picker.Item key={cat.code} label={cat.symbol} value={cat} style={styles.text_md}/>
+                    ))}
+            </Picker>     */}
+          </View>
+                
+          <MainButton label="Create Trip" onPress={handleTripSubmit} extraStyles={{ minWidth: '60%' }}/>            
+      </View>
+      <View>
+        <ScrollView>
+            {(listOfTrips.length > 0) && listOfTrips.map((trip) => (
+              <View key={trip.id} style={styles.listItem}>
+                  <Text style={styles.text_md}>{trip.name}</Text>
+                  <Text style={styles.text_md}>{new Date(trip.created_at).toLocaleDateString()}</Text>                           
+              </View>
+            ))}   
+            {(listOfTrips.length === 0) && <Text style={styles.h3}>No trips available. Create a new trip.</Text>}             
+        </ScrollView>
       </View>
 
-      <View style={styles.recentExpencesContainter}>
+      <View style={styles.recentTripsContainter}>
         <Text style={[styles.h3, styles.padding_bottom_10]}>Available Trips</Text>
         <ScrollView>
             {(listOfTrips.length > 0) && listOfTrips.map((trip) => (
@@ -127,6 +147,7 @@ export default function SettingsScreen() {
             {(listOfTrips.length === 0) && <Text style={styles.h3}>No trips available. Create a new trip.</Text>}             
         </ScrollView>
       </View>
+      <MainButton label="Configure Currencies" onPress={() => router.push('/currencies_config')}  extraStyles={{ minWidth: '60%' }}/>
     </SafeAreaView>
     
     

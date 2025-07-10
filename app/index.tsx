@@ -1,36 +1,39 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, ActivityIndicator } from 'react-native';
-import { Link } from 'expo-router';
+import { Link, useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
-import { getBasicCurrency, getCurrencies, getCurrenciesList, getLocalCurrency } from '../utils/currencyUtils';
+import React, { useCallback, useEffect, useState } from 'react';
+import { getBasicCurrency, getCurrencies, getCurrenciesList, getLocalCurrency, slimCurrency } from '../utils/currencyUtils';
 import { Currency } from '../types/currency';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { addExpense, calcTotal, getCategories, getExpenses, getRecentExpenses } from '../utils/expenseUtils';
 import { Expense } from '../types/expense';
 import { Picker } from '@react-native-picker/picker';
 import { colors, typography, spacing, borderRadius } from '../styles/tokens';
+import { MainButton } from '../components/MainButton';
+import { CurrencyPicker } from '../components/CurrencyPicker';
+// import { useFocusEffect } from '@react-navigation/native';
 
 
 export default function HomeScreen() {
 
-    const [baseCurrency, setBaseCurrency] = useState<Currency>();
-    const [localCurrency, setLocalCurrency] = useState<Currency>();
+    const [baseCurrency, setBaseCurrency] = useState<slimCurrency>();
+    const [localCurrency, setLocalCurrency] = useState<slimCurrency>();
     const [recentExpenses, setRecentExpenses] = useState<Expense[]>([]); 
     const [totalSpent, setTotalSpent] = useState<number>(0);
     const [categories, setCategories] = useState<string[]>([]);
-    const [currenciesList, setCurrenciesList] = useState<Currency[]>([]);
+    const [currenciesList, setCurrenciesList] = useState<slimCurrency[]>([]);
     const [loading, setLoading] = useState(true);
 
     const [amount, setAmount] = useState('');
     const [description, setDescription] = useState('');
     const [category, setCategory] = useState('');
-    const [currency, setCurrency] = useState<Currency>();
+    const [currency, setCurrency] = useState<slimCurrency>();
     
-    useEffect(() => {
+    useFocusEffect(useCallback(() => {
         async function fetchSettings() {
 
-            let localCurrencyResult: Currency | undefined;
-            let baseCurrencyResult: Currency | undefined;
+            let localCurrencyResult: slimCurrency | undefined;
+            let baseCurrencyResult: slimCurrency | undefined;
 
             try {
                 const result = await getBasicCurrency();
@@ -90,7 +93,7 @@ export default function HomeScreen() {
         }
         fetchSettings();
 
-    }, []);
+    }, []));
 
     async function handleExpenceSubmit() {
         console.log('Expense submitted:');
@@ -98,14 +101,14 @@ export default function HomeScreen() {
         console.log(`Description: ${description}`);
         console.log(`Category: ${category}`);
         console.log(`Currency: ${currency?.code || 'USD'}`);
-        if (!amount || !description || !category || !currency) {
+        if (!amount || !category || !currency) {
             console.error('Please fill in all fields');
             alert('Please fill in all fields');
             return;
-        }
-
+        }       
+      
         try {
-            await addExpense(amount, description, category, currency);
+            await addExpense(amount, (description) ? description : category, category, currency);
             console.log('Expense added successfully');
         }catch (error) {
             console.error('Error adding expense:', error);
@@ -119,6 +122,13 @@ export default function HomeScreen() {
             
         } catch (error) {
             console.error('Error fetching recent expences:', error);
+        }
+        try {                
+            const total = await calcTotal(baseCurrency?.code||'USD');
+            setTotalSpent(total);
+            console.log('Total spent:', total);
+        } catch (error) {
+            console.error('Error fetching total spent:', error);
         }
 
         setAmount('');
@@ -155,16 +165,14 @@ export default function HomeScreen() {
                         onChangeText={setAmount}
                         keyboardType="numeric"
                         placeholder="0.00"
-                    />                    
-                     <Picker
-                    style={styles.currencyPicker}                    
-                    selectedValue={currency}
-                    mode="dropdown"
-                    onValueChange={setCurrency}>
-                        {currenciesList.map((cat) => (
-                            <Picker.Item key={cat.code} label={cat.symbol} value={cat} style={styles.text_md}/>
-                        ))}
-                    </Picker>
+                    /> 
+                    <CurrencyPicker 
+                        currency={currency} 
+                        currenciesList={currenciesList} 
+                        extraStyles={{width: typography.md*7}}
+                        onValueChange={setCurrency} 
+                    />                  
+
                 </View>                              
             </View>
             <View style={styles.pickerContainer}>
@@ -188,9 +196,7 @@ export default function HomeScreen() {
                     placeholder="Expense description"
                 />
             </View>           
-            <TouchableOpacity style={styles.primaryButton} onPress={handleExpenceSubmit}>
-                <Text style={styles.primaryButtonText}>Add Expense</Text>
-            </TouchableOpacity>            
+            <MainButton label="Add Expense" onPress={handleExpenceSubmit} extraStyles={{ minWidth: '60%', marginBottom: spacing.md }}/>            
         </View>
 
         <View style={styles.recentExpencesContainter}>

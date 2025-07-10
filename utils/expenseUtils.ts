@@ -1,13 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Expense } from '../types/expense';
 import { get } from 'react-native/Libraries/TurboModule/TurboModuleRegistry';
-import { getCurrencies, getCurrenciesList } from './currencyUtils';
+import { getCurrencies, getCurrenciesList, slimCurrency } from './currencyUtils';
 import { Currency } from '../types/currency';
 import uuid from 'react-native-uuid';
 
 export const defaultExpenseCategories = ["Groceries", "Souvenirs", "Eating Out & TA", "Beer and Coffee", "Gas + Parking", "Attractions"];
 
-export async function addExpense(amount: string, description: string, category: string, currency: Currency) {
+export async function addExpense(amount: string, description: string, category: string, currency: slimCurrency) {
   
   if (!amount || !description || !category || !currency) {
     throw new Error('Please fill in all fields');

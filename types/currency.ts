@@ -1,6 +1,5 @@
 export type Currency = {
-    code: string;
-    name: string;
+    code: string;    
     symbol: string;
     exchangeRate: number; 
 }

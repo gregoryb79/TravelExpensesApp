@@ -60,21 +60,7 @@ export const styles = StyleSheet.create({
     },
     buttonContainer: {
         gap: spacing.md,
-    },
-    primaryButton: {
-        backgroundColor: colors.primary,
-        padding: spacing.md,
-        borderRadius: borderRadius.base,
-        alignItems: 'center',
-        minWidth: '60%',
-        alignSelf: 'center',
-        marginBottom: spacing.md,
-    },
-    primaryButtonText: {
-        color: colors.textWhite,
-        fontSize: typography.md,
-        fontWeight: typography.weights.semibold,
-    },
+    },   
     secondaryButton: {
         backgroundColor: colors.surfaceLight,
         padding: spacing.md,
@@ -145,7 +131,35 @@ export const styles = StyleSheet.create({
         padding: spacing.sm,
         fontSize: typography.md,              
     },
+    newTripHeader:{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.md,
+    },
     newTripForm:{
-        
+        backgroundColor: colors.surface,
+        borderRadius: borderRadius.base,
+        padding: spacing.md,
+        gap: spacing.sm,
+    },
+    baseCurencyContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: spacing.sm,
+        gap: spacing.sm,
+    },
+    recentTripsContainter:{
+        flex: 1,        
+        padding: spacing.base,
+        backgroundColor: colors.surfaceSecondary,
+        borderRadius: borderRadius.base,
+    },
+    selectedItem: {
+        color: colors.primaryBlue,
+        fontWeight: typography.weights.semibold,
+    },
+    tripCurrencyContainer:{
+
     }
 });
