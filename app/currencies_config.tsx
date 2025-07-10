@@ -7,6 +7,7 @@ import { addToShortList, getCurrenciesList, removeFromShortList, slimCurrency } 
 import { MainButton } from '../components/MainButton';
 import { GeneralPicker } from '../components/GeneralPicker';
 import { countryToCurrency } from '../data/currency.data';
+import { getExpenses } from '../utils/expenseUtils';
 
 export default function CurrenciesConfig() {
  
@@ -14,6 +15,7 @@ export default function CurrenciesConfig() {
   const [countriesList, setCountriesList] = useState<string[]>([]);
   const [country, setCountry] = useState<string>('');
   const [selectedCurrencies, setSelectedCurrencies] = useState<string[]>([]);
+
 
 
   useEffect(() => {
@@ -51,6 +53,16 @@ export default function CurrenciesConfig() {
   }
 
   async function handleRemoveFromShortList() {
+    if (selectedCurrencies.length === 0) {
+      console.warn('No currencies selected for removal.');
+      return;
+    }
+    const expenses = await getExpenses();
+    if (expenses.length > 0 && expenses.some(expense => selectedCurrencies.includes(expense.currency))) {
+      console.warn('Cannot remove currencies that are used in expenses.');
+      alert('Cannot remove currencies that are used in expenses.');
+      return;
+    }
     try{
       await removeFromShortList(selectedCurrencies);
       setSelectedCurrencies([]); 
@@ -75,8 +87,7 @@ export default function CurrenciesConfig() {
         }
     });    
   }
-
-  console.log('Selected currencies:', selectedCurrencies);
+  
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>  
       <View style={styles.newTripHeader}>
