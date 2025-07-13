@@ -5,13 +5,16 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { getBasicCurrency, getCurrencies, getCurrenciesList, getLocalCurrency, slimCurrency } from '../utils/currencyUtils';
 import { Currency } from '../types/currency';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { addExpense, calcTotal, getCategories, getExpenses, getRecentExpenses } from '../utils/expenseUtils';
+import { addExpense, calcTotal, getCategories, } from '../utils/expenseUtils';
 import { Expense } from '../types/expense';
 import { Picker } from '@react-native-picker/picker';
 import { colors, typography, spacing, borderRadius } from '../styles/tokens';
 import { MainButton } from '../components/MainButton';
 import { CurrencyPicker } from '../components/CurrencyPicker';
 import { debugAsyncStorage } from '../utils/debug';
+import { Trip } from '../types/trip';
+import { ca } from 'date-fns/locale';
+import { getCurrentTrip, getCurrentTripName } from '../utils/tripUtils';
 // import { useFocusEffect } from '@react-navigation/native';
 
 
@@ -24,6 +27,7 @@ export default function HomeScreen() {
     const [categories, setCategories] = useState<string[]>([]);
     const [currenciesList, setCurrenciesList] = useState<slimCurrency[]>([]);
     const [loading, setLoading] = useState(true);
+    const [currentTrip, setCurrentTrip] = useState<Trip>();
 
     const [amount, setAmount] = useState('');
     const [description, setDescription] = useState('');
@@ -36,52 +40,28 @@ export default function HomeScreen() {
             let localCurrencyResult: slimCurrency | undefined;
             let baseCurrencyResult: slimCurrency | undefined;
 
-            try {
-                const result = await getBasicCurrency();
-                setBaseCurrency(result);
-                baseCurrencyResult = result;
-                console.log('Base currency:', result);
-            } catch (error) {
-                console.error('Error fetching base currency:', error);
+            try{
+                const result = await getCurrentTrip();
+                if (result) {
+                    setCurrentTrip(result);
+                    localCurrencyResult = result.localCurrency;
+                    baseCurrencyResult = result.baseCurrency;
+                    setCurrency(result.localCurrency);
+                    console.log(`Current trip set: ${result.name}, Local Currency: ${localCurrencyResult?.code}, Base Currency: ${baseCurrencyResult?.code}`);
+                } else {
+                    console.log('No current trip set');
+                }
+            }catch (error) {
+                console.error('Error fetching current trip:', error);
             }
-            try {
-                const result = await getLocalCurrency();
-                setLocalCurrency(result);
-                setCurrency(result);
-                localCurrencyResult = result;
-                console.log('Local currency:', localCurrency);
-            } catch (error) {
-                console.error('Error fetching base currency:', error);
-            }
-            try {
-                const result = await getRecentExpenses();
-                
-                setRecentExpenses(result);
-                console.log('Recent expenses:', result.length);
-                
-            } catch (error) {
-                console.error('Error fetching recent expences:', error);
-            }
+            
             try {                
-                const total = await calcTotal(baseCurrencyResult?.code||'USD');
+                const total = currentTrip ? await calcTotal(currentTrip) : 0;
                 setTotalSpent(total);
                 console.log('Total spent:', total);
             } catch (error) {
                 console.error('Error fetching total spent:', error);
-            }
-            try{
-                const result = await getCurrenciesList();
-                const reorderedList = result.sort((a, b) => {
-                    if (a.code === localCurrencyResult?.code) return -1;
-                    if (b.code === localCurrencyResult?.code) return 1;
-                    return 0;
-                });
-                
-                setCurrenciesList(reorderedList);
-                console.log('Currencies list obtained',reorderedList);
-            }catch (error) {
-                console.error('Error fetching currencies list:', error);
-            }
+            }            
             try{
                 const result = await getCategories();
                 setCategories(result);
@@ -116,26 +96,24 @@ export default function HomeScreen() {
             alert('Error adding expense');
             return;
         }
+
         try {
-            const result = await getRecentExpenses();            
-            setRecentExpenses(result);
-            console.log('Recent expenses:', result.length);
-            
+            const result = await getCurrentTrip();            
+            if ( result){
+                setCurrentTrip(result);
+                console.log('Expenses:', result.expenses.length);
+                const total = await calcTotal(result);
+                setTotalSpent(total);
+                setCurrency(result.localCurrency);
+            }            
         } catch (error) {
-            console.error('Error fetching recent expences:', error);
-        }
-        try {                
-            const total = await calcTotal(baseCurrency?.code||'USD');
-            setTotalSpent(total);
-            console.log('Total spent:', total);
-        } catch (error) {
-            console.error('Error fetching total spent:', error);
-        }
+            console.error('Error fetching current trip:', error);
+        }       
 
         setAmount('');
         setDescription('');
         setCategory(categories[0] || '');
-        setCurrency(localCurrency);
+        
     }
 
     if (loading) {
@@ -147,14 +125,14 @@ export default function HomeScreen() {
         );
     }
 
-    debugAsyncStorage();
-    
+    // debugAsyncStorage();
+
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>      
       
         <View style={styles.quickStats}>
-            <Text style={styles.statsTitle}>{`💰 Total Spent: ${baseCurrency?.symbol} ${totalSpent.toFixed(2)}`}</Text>
-            <Text style={styles.statsSubtitle}>🌍 Current Trip: Not set</Text>            
+            <Text style={styles.statsTitle}>{`💰 Total Spent: ${currentTrip?.baseCurrency.symbol} ${totalSpent.toFixed(2)}`}</Text>
+            <Text style={styles.statsSubtitle}>{`Current Trip: ${currentTrip?.name ? currentTrip?.name : "Not Set"}`}</Text>            
         </View>
 
         <View style={styles.addExpenseContainter}>
@@ -170,7 +148,7 @@ export default function HomeScreen() {
                     /> 
                     <CurrencyPicker 
                         currency={currency} 
-                        currenciesList={currenciesList} 
+                        currenciesList={currentTrip?.currenciesList || []} 
                         extraStyles={{width: typography.md*7}}
                         onValueChange={setCurrency} 
                     />                  
@@ -204,10 +182,10 @@ export default function HomeScreen() {
         <View style={styles.recentExpencesContainter}>
             <Text style={[styles.h3, styles.padding_bottom_10]}>Recent Expenses</Text>
             <ScrollView>
-                {recentExpenses.map((expense) => (
+                {currentTrip?.expenses.slice(0, 10).map((expense) => (
                 <View key={expense.id} style={styles.listItem}>
                     <Text style={styles.text_md}>{expense.description}</Text>
-                    <Text style={styles.text_md}>{`${expense.amount} ${expense.currency}`}</Text>
+                    <Text style={styles.text_md}>{`${expense.amount} ${currenciesList.find(c => c.code === expense.currency)?.symbol || expense.currency}`}</Text>
                 </View>
                 ))}                
             </ScrollView>

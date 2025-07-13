@@ -2,13 +2,14 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput } from 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, typography, spacing, borderRadius } from '../styles/tokens';
 import { styles } from '../styles/styles';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Trip } from '../types/trip';
 import { getCurrentTrip, getTrips, saveTrip } from '../utils/tripUtils';
-import { Link, router } from 'expo-router';
+import { Link, router, useFocusEffect } from 'expo-router';
 import { getCurrenciesList, slimCurrency } from '../utils/currencyUtils';
 import { MainButton } from '../components/MainButton';
 import { CurrencyPicker } from '../components/CurrencyPicker';
+import SettingsButton from '../components/SettingsButton';
 
 export default function SettingsScreen() {
 
@@ -16,23 +17,35 @@ export default function SettingsScreen() {
   const [listOfTrips, setListOfTrips] = useState<Trip[]>([]);
 
   const [tripName, setTripName] = useState<string>('');
-  const [currency, setCurrency] = useState<slimCurrency>();
-  const [currenciesList, setCurrenciesList] = useState<slimCurrency[]>([]);
-  const [localCurrencies, setLocalCurrencies] = useState<slimCurrency[]>([]);
+  const [localCurrency, setLocalCurrency] = useState<slimCurrency>();
+  const [baseCurrency, setBaseCurrency] = useState<slimCurrency>();
+  const [currenciesList, setCurrenciesList] = useState<slimCurrency[]>([]);  
 
-  useEffect(() => {
+  
+  useFocusEffect(useCallback(() => {
 
     async function fetchSettings() {
       try {
         const result = await getCurrentTrip();
         if (result) {
           setCurrTrip(result);
-          console.log('Current trip:', result);
+          setTripName(result.name);
+          console.log('Current trip:', result.name);
+          setLocalCurrency(result.localCurrency);
+          console.log('Local currency:', result.localCurrency);
+          setBaseCurrency(result.baseCurrency);
+          console.log('Base currency:', result.baseCurrency);
+        }else {
+          console.log('No current trip found');
+          const result = await getCurrenciesList();
+          setCurrenciesList(result);        
+          setLocalCurrency(result[0]);
+          setBaseCurrency(result[0]);
         }
       } catch (error) {
         console.error('Error fetching current trip:', error);
       }
-       try {
+      try {
         const result = await getTrips();
         if (result) {
           setListOfTrips(result);
@@ -40,34 +53,22 @@ export default function SettingsScreen() {
         }
       } catch (error) {
         console.error('Error fetching list of trips:', error);
-      }
-      try{
-        const result = await getCurrenciesList();
-        setCurrenciesList(result);
-        setLocalCurrencies(result);
-        setCurrency(result[0]);
-      }catch (error) {
-          console.error('Error fetching currencies list:', error);
-      }
-
+      }      
     }
-
 
     fetchSettings();
 
-  }, []);
+  }, []));
 
   async function handleTripSubmit() {
-    if (!tripName || !currency) {
+    if (!tripName || !localCurrency || !baseCurrency) {
         console.error('Please fill in all fields');
         alert('Please fill in all fields');
         return;
     }
   
     try {
-        await saveTrip( tripName, currency, localCurrencies);
-        setTripName(''); 
-        setCurrency(undefined);             
+        await saveTrip( currTrip?.id || '', tripName, baseCurrency, localCurrency, currenciesList);        
     } catch (error) {   
         console.error('Error saving trip:', error);
         alert('Error saving trip. Please try again.');
@@ -80,63 +81,50 @@ export default function SettingsScreen() {
       }
     } catch (error) {
       console.error('Error fetching list of trips:', error);
-    }
-    
-    setTripName(''); 
-    setCurrency(currenciesList[0]);
+    }    
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>  
-      <View style={styles.newTripHeader}>
-        <Text style={styles.h3}>Current trip:</Text>
-        <Text style={styles.h3}>{`${currTrip ? currTrip?.name : "No trip selected"}`}</Text>
-        {/* {!currTrip && <Text style={styles.h3}>No trip selected, create new or select saved.</Text>}             */}
-      </View>
+    <SafeAreaView style={styles.container} edges={['bottom']}> 
+      
       <View style={styles.newTripForm}>
-        <Text style={styles.text_md}>Trip Name</Text>
+        <Text style={styles.h3}>Current trip:</Text>
           <TextInput            
-              style={styles.descriptionInput}
+              style={[styles.descriptionInput, styles.h3 ]}
               value={tripName}
               onChangeText={setTripName}
               placeholder="Enter Trip Name"
               placeholderTextColor={colors.textSecondary}
           />
-          <View style={styles.baseCurencyContainer}>
-            <Text style={styles.text_md}>Select Base Currency:</Text>
-            <CurrencyPicker 
-                currency={currency} 
-                currenciesList={currenciesList} 
-                extraStyles={{width: typography.md*7}}
-                onValueChange={setCurrency} 
-            /> 
-            {/* <Picker
-                style={styles.currencyPicker}                    
-                selectedValue={currency}
-                mode="dropdown"
-                onValueChange={setCurrency}>
-                    {currenciesList.map((cat) => (
-                        <Picker.Item key={cat.code} label={cat.symbol} value={cat} style={styles.text_md}/>
-                    ))}
-            </Picker>     */}
+          <View style={styles.currenciesContainter}>
+            <View style={styles.currencyContainter}>
+              <Text style={styles.text_md}>Home Currency:</Text>
+              <CurrencyPicker 
+                  currency={baseCurrency} 
+                  currenciesList={currTrip?.currenciesList||[]} 
+                  extraStyles={{width: typography.md*7}}
+                  onValueChange={setBaseCurrency} 
+              />            
+            </View>
+            <SettingsButton onPress={() => {router.push('/currencies_config')}}/>
+            <View style={styles.currencyContainter}>
+              <Text style={styles.text_md}>Travel Currency:</Text>
+              <CurrencyPicker 
+                  currency={localCurrency} 
+                  currenciesList={currTrip?.currenciesList||[]} 
+                  extraStyles={{width: typography.md*7}}
+                  onValueChange={setLocalCurrency} 
+              />           
+            </View>            
           </View>
                 
-          <MainButton label="Create Trip" onPress={handleTripSubmit} extraStyles={{ minWidth: '60%' }}/>            
-      </View>
-      <View>
-        <ScrollView>
-            {(listOfTrips.length > 0) && listOfTrips.map((trip) => (
-              <View key={trip.id} style={styles.listItem}>
-                  <Text style={styles.text_md}>{trip.name}</Text>
-                  <Text style={styles.text_md}>{new Date(trip.created_at).toLocaleDateString()}</Text>                           
-              </View>
-            ))}   
-            {(listOfTrips.length === 0) && <Text style={styles.h3}>No trips available. Create a new trip.</Text>}             
-        </ScrollView>
-      </View>
+          <View style={styles.buttonContainer}>
+            <MainButton label="Update Trip" onPress={handleTripSubmit} extraStyles={{minWidth: '60%'}}/>          
+          </View>
+      </View>      
 
       <View style={styles.recentTripsContainter}>
-        <Text style={[styles.h3, styles.padding_bottom_10]}>Available Trips</Text>
+        <Text style={[styles.h3, styles.padding_bottom_10]}>All Trips</Text>
         <ScrollView>
             {(listOfTrips.length > 0) && listOfTrips.map((trip) => (
               <View key={trip.id} style={styles.listItem}>
@@ -146,8 +134,17 @@ export default function SettingsScreen() {
             ))}   
             {(listOfTrips.length === 0) && <Text style={styles.h3}>No trips available. Create a new trip.</Text>}             
         </ScrollView>
+        <View style={styles.buttonContainer}>
+          <MainButton
+            label="New Trip" 
+            onPress={() => {}}            
+          />
+          <MainButton
+            label="Delete Selected" 
+            onPress={() => {}}            
+          />
+        </View>
       </View>
-      <MainButton label="Configure Currencies" onPress={() => router.push('/currencies_config')}  extraStyles={{ minWidth: '60%' }}/>
     </SafeAreaView>
     
     

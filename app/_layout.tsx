@@ -1,4 +1,4 @@
-import { Stack } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { setupData } from '../utils/currencyUtils';
 import { ActivityIndicator, View, Text } from 'react-native';
@@ -35,10 +35,10 @@ export default function RootLayout() {
 
     return (
         <Stack screenOptions= {headerOptions}>
-            <Stack.Screen name="index" options={{ title: 'TravelExpences ', headerRight: () => <SettingsButton />}} />
-            <Stack.Screen name="expenses" options={{ title: 'Expenses', headerRight: () => <SettingsButton /> }} />                        
+            <Stack.Screen name="index" options={{ title: 'TravelExpences ', headerRight: () => <SettingsButton onPress={() => {router.push('/settings')}}/>}} />
+            <Stack.Screen name="expenses" options={{ title: 'Expenses', headerRight: () => <SettingsButton onPress={() => {router.push('/settings')}}/> }} />                        
             <Stack.Screen name="settings" options={{ title: 'Settings'}} /> 
-            <Stack.Screen name="currencies_config" options={{ title: 'Currencies', headerRight: () => <SettingsButton /> }} />                  
+            <Stack.Screen name="currencies_config" options={{ title: 'Currencies', headerRight: () => <SettingsButton onPress={() => {router.push('/settings')}}/> }} />                  
         </Stack>
     );
 }

@@ -121,6 +121,7 @@ export default function CurrenciesConfig() {
         <MainButton
           label="Remove From Short List" 
           onPress={handleRemoveFromShortList}
+          disabled={selectedCurrencies.length === 0}
         />
       </View>  
 

@@ -3,6 +3,7 @@ import { Trip } from '../types/trip';
 import { Currency } from '../types/currency';
 import uuid from 'react-native-uuid';
 import { slimCurrency } from './currencyUtils';
+import { Expense } from '../types/expense';
 
 export async function getCurrentTrip() : Promise<Trip | null> {
   try {
@@ -18,6 +19,46 @@ export async function getCurrentTrip() : Promise<Trip | null> {
   } catch (error) {
     console.error('Error fetching current trip:', error);
     return null;
+  } 
+}
+
+export async function saveCurrentTrip(currentTrip : Trip): Promise<void> {
+    
+    const allTrips = await getTrips();   
+    if (!currentTrip) {
+        console.log('No current trip to save');
+        return;
+    }
+    const index = allTrips.findIndex(trip => trip.id === currentTrip.id);
+    if (index !== -1) {
+        allTrips[index] = currentTrip;
+    } else {
+        allTrips.push(currentTrip);
+    }
+    try {
+        await AsyncStorage.setItem('allTrips', JSON.stringify(allTrips));
+        await AsyncStorage.setItem('currentTrip', JSON.stringify(currentTrip));
+        console.log('Current trip saved successfully');
+    } catch (error) {
+        console.error('Error saving current trip:', error);
+    }
+}
+
+
+export async function getCurrentTripName() : Promise<string> {
+  try {
+    console.log('Fetching current trip...');    
+    
+    const currentTrip  = await AsyncStorage.getItem('currentTrip');
+    if (!currentTrip) {
+        console.log('No current trip found in AsyncStorage');
+        return '';
+    } 
+    
+    return (JSON.parse(currentTrip) as Trip).name;
+  } catch (error) {
+    console.error('Error fetching current trip:', error);
+    return '';
   } 
 }
 
@@ -38,27 +79,47 @@ export async function getTrips() : Promise<Trip[]> {
   } 
 }
 
-export async function saveTrip(tripName: string, currency: slimCurrency, localCurrencies: slimCurrency[]): Promise<void> {
-    try {
+export async function saveTrip(tripId: string, tripName: string, baseCurrency: slimCurrency, localCurrency: slimCurrency, currenciesList: slimCurrency[]): Promise<void> {
+    try {     
+
+        const allTrips = await getTrips();
+        const currentTrip = await getCurrentTrip();
+
+        if (tripId) {            
+            const index = allTrips.findIndex(trip => trip.id === tripId);
+            if (index !== -1) {
+                allTrips[index].name = tripName;
+                allTrips[index].baseCurrency = baseCurrency;
+                allTrips[index].localCurrency = localCurrency;
+                allTrips[index].currenciesList = currenciesList;
+                allTrips[index].expenses = currentTrip?.expenses || [];
+                await AsyncStorage.setItem('allTrips', JSON.stringify(allTrips));                
+                await saveCurrentTrip(allTrips[index]);
+                console.log(`Trip updated: ${tripName}, ID: ${tripId}`);
+                return;
+            }
+         } 
+           
         const newTrip: Trip = {
             id: uuid.v4() as string,
             name: tripName,
-            baseCurrency: currency,
-            localCurrencies: localCurrencies,
+            baseCurrency,
+            localCurrency,
+            currenciesList,
             expenses: [],
             created_at: new Date().toISOString()
         };
-
-        // Save the new trip to AsyncStorage
-        const allTrips = await getTrips();
-        allTrips.push(newTrip);
+        allTrips.push(newTrip);                       
         await AsyncStorage.setItem('allTrips', JSON.stringify(allTrips));
 
         // Set the current trip
-        await AsyncStorage.setItem('currentTrip', JSON.stringify(newTrip));
-
+        await saveCurrentTrip(newTrip);
         console.log('New trip saved:', newTrip);
+
     } catch (error) {
         console.error('Error saving trip:', error);
     }
 }
+
+
+

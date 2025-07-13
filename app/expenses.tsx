@@ -83,10 +83,18 @@ export default function ExpensesScreen() {
             ))}                          
         </ScrollView>
 
-        <MainButton
-          label="Delete Selected" 
-          onPress={handleRemoveFromExpenses}
-        />
+        <View style={styles.buttonContainer}>
+          <MainButton
+            label="Edit Selected" 
+            onPress={() => {}}
+            disabled={selectedExpenses.length === 0 || selectedExpenses.length > 1} // Disable if no expenses selected
+          />
+          <MainButton
+            label="Delete Selected" 
+            onPress={handleRemoveFromExpenses}
+            disabled={selectedExpenses.length === 0}
+          />
+        </View>
       </View>
       
       

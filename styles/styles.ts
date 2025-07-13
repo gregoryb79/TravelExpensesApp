@@ -59,7 +59,9 @@ export const styles = StyleSheet.create({
         color: colors.textSecondary,
     },
     buttonContainer: {
-        gap: spacing.md,
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        // gap: spacing.md,
     },   
     secondaryButton: {
         backgroundColor: colors.surfaceLight,
@@ -142,10 +144,17 @@ export const styles = StyleSheet.create({
         padding: spacing.md,
         gap: spacing.sm,
     },
-    baseCurencyContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
+    currencyContainter: {
+        flexDirection: 'column',
+        // justifyContent: 'space-between',
         alignItems: 'center',
+        // padding: spacing.sm,
+        gap: spacing.sm,
+    },
+    currenciesContainter: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
         padding: spacing.sm,
         gap: spacing.sm,
     },

@@ -1,9 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Expense } from '../types/expense';
-import { get } from 'react-native/Libraries/TurboModule/TurboModuleRegistry';
-import { getCurrencies, getCurrenciesList, slimCurrency } from './currencyUtils';
-import { Currency } from '../types/currency';
+import { getCurrenciesList, slimCurrency } from './currencyUtils';
+// import { Currency } from '../types/currency';
 import uuid from 'react-native-uuid';
+import { Trip } from '../types/trip';
+import { getCurrentTrip, saveCurrentTrip } from './tripUtils';
 
 export const defaultExpenseCategories = ["Groceries", "Souvenirs", "Eating Out & TA", "Beer and Coffee", "Gas + Parking", "Attractions"];
 
@@ -21,21 +22,28 @@ export async function addExpense(amount: string, description: string, category: 
     description,
     created_at: new Date().toISOString()
   }
-
   
-  const expenses = await getExpenses();
-  console.log('Expences length before adding:', expenses.length);
-  expenses.unshift(newExpense);  
-  console.log('Expences length after adding:', expenses.length);
-  await saveExpenses(expenses);
+  const currentTrip = await getCurrentTrip();
+  if (!currentTrip) {
+    throw new Error('No current trip found');
+  }
+  console.log('Expences length before adding:', currentTrip?.expenses.length);
+  currentTrip?.expenses.unshift(newExpense);  
+  console.log('Expences length after adding:', currentTrip?.expenses.length);
+  await saveCurrentTrip(currentTrip);
 }
 
 export async function removeFromExpenses(expensesList: string[]): Promise<void> {
-    const allExpenses = await getExpenses();
-    const updatedExpenses = allExpenses.filter(expense => !expensesList.includes(expense.id));
+    
     try {
-        await AsyncStorage.setItem('expenses', JSON.stringify(updatedExpenses));
-        console.log(`Expenses updated, removed ${allExpenses.length - updatedExpenses.length} expenses from the list.`);
+        const currentTrip = await getCurrentTrip();
+        if (currentTrip) {
+          currentTrip.expenses = currentTrip.expenses.filter(expense => !expensesList.includes(expense.id));
+          await saveCurrentTrip(currentTrip);
+          console.log('Expenses updated successfully');
+        } else {
+          console.log('No current trip found, cannot remove expenses');
+        }
     } catch (error) {
         console.error('Error updating expenses:', error);
     }
@@ -46,33 +54,32 @@ export async function getCategories(): Promise<string[]> {
   return defaultExpenseCategories;
 }
 
-export async function getExpenses(): Promise<Expense[]> {
-  try {
-    const result = await AsyncStorage.getItem('expenses');
-    if (result) {
-      const storedExpenses: Expense[] = JSON.parse(result);
-      return storedExpenses;
-    }else {
-      console.log('No expenses found in storage');
-      return mockExpenses; 
-    }   
-  } catch (error) {
-    console.error('Error fetching expenses from storage:', error);
-    return mockExpenses; 
-  }
+export async function getExpenses (): Promise<Expense[]> {
+    try {
+        const currentTrip = await getCurrentTrip();
+        if (!currentTrip) {
+            console.log('No current trip found, returning empty expenses list');
+            return [];
+        }             
+        return currentTrip.expenses;                
+    } catch (error) {
+        console.error('Error fetching expenses:', error);
+        return [];
+    }
 }
 
 
 
-export async function calcTotal(baseCurrencyCode: string): Promise<number> {
+export async function calcTotal(currTrip : Trip): Promise<number> {
+  
   const basicCurrencies = await getCurrenciesList();
-  const baseCurrency = basicCurrencies.find(curr => curr.code === baseCurrencyCode);
+  const baseCurrency = basicCurrencies.find(curr => curr.code === currTrip.baseCurrency.code);
      
   if (!baseCurrency) {
     throw new Error(`Currency ${baseCurrency} not found`);
   }
 
-  const expenses = await getExpenses();
+  const expenses = currTrip.expenses;
   const total = expenses.reduce((acc, expense) => {
     if (expense.currency === baseCurrency.code) {
       return acc + expense.amount;
@@ -93,20 +100,20 @@ export async function calcTotal(baseCurrencyCode: string): Promise<number> {
   
 }
 
-export async function getRecentExpenses(): Promise<Expense[]> {
+// export async function getRecentExpenses(): Promise<Expense[]> {
 
-  const basicCurrencies = await getCurrenciesList();
-  const expenses = await getExpenses();
-  const recentExpenses = expenses.slice(0, 10).map((expense) => {    
-    const currency = basicCurrencies.find(curr => curr.code === expense.currency);      
-    return {
-      ...expense,
-      currency: currency?.symbol || expense.currency
-    };
-  });
-  return recentExpenses;
+//   const basicCurrencies = await getCurrenciesList();
+//   const expenses = await getExpenses();
+//   const recentExpenses = expenses.slice(0, 10).map((expense) => {    
+//     const currency = basicCurrencies.find(curr => curr.code === expense.currency);      
+//     return {
+//       ...expense,
+//       currency: currency?.symbol || expense.currency
+//     };
+//   });
+//   return recentExpenses;
   
-}
+// }
 
 export async function getAllExpenses(): Promise<Expense[]> {
 
