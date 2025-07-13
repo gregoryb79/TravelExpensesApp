@@ -159,7 +159,28 @@ export const styles = StyleSheet.create({
         color: colors.primaryBlue,
         fontWeight: typography.weights.semibold,
     },
-    tripCurrencyContainer:{
-
-    }
+    curenciesListContainer:{
+        maxHeight: '70%',
+        backgroundColor: colors.surfaceSecondary,
+        borderRadius: borderRadius.base,
+        padding: spacing.md,
+        margin: spacing.sm,
+    },
+    expensesListContainer:{
+        maxHeight: '80%',
+        backgroundColor: colors.surfaceSecondary,
+        borderRadius: borderRadius.base,
+        padding: spacing.md,
+        margin: spacing.sm,
+    },
+    expenseListItem: {
+        padding: spacing.xs,
+        flexDirection: 'column',                       
+        marginBottom: spacing.sm,
+    },
+    expenseListItemRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',               
+        marginBottom: spacing.sm,
+    },   
 });

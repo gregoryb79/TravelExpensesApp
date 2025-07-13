@@ -92,24 +92,22 @@ export default function CurrenciesConfig() {
     <SafeAreaView style={styles.container} edges={['bottom']}>  
       <View style={styles.newTripHeader}>
         <Text style={styles.h3}>Configure currencies</Text>
-      </View>
-        
+      </View>        
       
       <GeneralPicker 
-                      input={country} 
-                      inputArray={countriesList} 
-                      extraStyles={{width: '100%'}}
-                      onValueChange={setCountry} 
-                  /> 
+          input={country} 
+          inputArray={countriesList} 
+          extraStyles={{width: '100%', backgroundColor: colors.surfaceSecondary, borderRadius: borderRadius.sm, padding: spacing.md}}
+          onValueChange={setCountry} 
+      /> 
       <MainButton
         label="Add To Short List" 
         onPress={handleAddToShortList}
-      />
-        
+      />        
 
       <View>
         <Text style={styles.h3}>Currencies Short List:</Text>
-        <ScrollView>
+        <ScrollView style={styles.curenciesListContainer}>
             {currenciesList.map((currency) => (
               <TouchableOpacity key={currency.code} style={styles.listItem}
                 onPress={() => handleCurrencySelect(currency.code)}
@@ -119,6 +117,7 @@ export default function CurrenciesConfig() {
               </TouchableOpacity>
             ))}                          
         </ScrollView>
+
         <MainButton
           label="Remove From Short List" 
           onPress={handleRemoveFromShortList}

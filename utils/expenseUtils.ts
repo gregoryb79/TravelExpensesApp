@@ -30,6 +30,17 @@ export async function addExpense(amount: string, description: string, category: 
   await saveExpenses(expenses);
 }
 
+export async function removeFromExpenses(expensesList: string[]): Promise<void> {
+    const allExpenses = await getExpenses();
+    const updatedExpenses = allExpenses.filter(expense => !expensesList.includes(expense.id));
+    try {
+        await AsyncStorage.setItem('expenses', JSON.stringify(updatedExpenses));
+        console.log(`Expenses updated, removed ${allExpenses.length - updatedExpenses.length} expenses from the list.`);
+    } catch (error) {
+        console.error('Error updating expenses:', error);
+    }
+}
+
 export async function getCategories(): Promise<string[]> {
   
   return defaultExpenseCategories;
@@ -94,6 +105,21 @@ export async function getRecentExpenses(): Promise<Expense[]> {
     };
   });
   return recentExpenses;
+  
+}
+
+export async function getAllExpenses(): Promise<Expense[]> {
+
+  const basicCurrencies = await getCurrenciesList();
+  const expenses = await getExpenses();
+  const allExpenses = expenses.map((expense) => {    
+    const currency = basicCurrencies.find(curr => curr.code === expense.currency);      
+    return {
+      ...expense,
+      currency: currency?.symbol || expense.currency
+    };
+  });
+  return allExpenses;
   
 }
 

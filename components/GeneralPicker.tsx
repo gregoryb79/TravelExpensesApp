@@ -10,16 +10,17 @@ type CurrencySelectorProps = {
 }
 export function GeneralPicker({input, inputArray, extraStyles, onValueChange, }: CurrencySelectorProps) {
     return(
-        
+       <View style={[extraStyles]}>
         <Picker
-            style={[styles.currencyPicker, extraStyles]}                    
+            style={[styles.currencyPicker]}                    
             selectedValue={input}
             mode="dropdown"
             onValueChange={onValueChange}>
                 {inputArray.map((cat) => (
                     <Picker.Item key={cat} label={cat} value={cat} style={styles.text_md}/>
                 ))}
-        </Picker>    
+        </Picker>   
+        </View> 
           
     );
 }
@@ -29,10 +30,10 @@ export const styles = StyleSheet.create({
         fontSize: typography.md,
         color: colors.textPrimary,
     },    
-    currencyPicker: {        
-               
+    currencyPicker: {       
+        // flex: 1,       
         backgroundColor: colors.textWhite,        
-        borderRadius: borderRadius.sm,
-        marginBottom: spacing.sm,        
+        // borderRadius: borderRadius.sm,
+        // marginBottom: spacing.sm,        
     },   
 });

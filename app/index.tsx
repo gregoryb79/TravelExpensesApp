@@ -11,6 +11,7 @@ import { Picker } from '@react-native-picker/picker';
 import { colors, typography, spacing, borderRadius } from '../styles/tokens';
 import { MainButton } from '../components/MainButton';
 import { CurrencyPicker } from '../components/CurrencyPicker';
+import { debugAsyncStorage } from '../utils/debug';
 // import { useFocusEffect } from '@react-navigation/native';
 
 
@@ -77,7 +78,7 @@ export default function HomeScreen() {
                 });
                 
                 setCurrenciesList(reorderedList);
-                // console.log('Currencies list obtained',reorderedList);
+                console.log('Currencies list obtained',reorderedList);
             }catch (error) {
                 console.error('Error fetching currencies list:', error);
             }
@@ -146,7 +147,8 @@ export default function HomeScreen() {
         );
     }
 
-
+    debugAsyncStorage();
+    
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>      
       
