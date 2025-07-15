@@ -8,6 +8,7 @@ import { MainButton } from '../components/MainButton';
 import { GeneralPicker } from '../components/GeneralPicker';
 import { countryToCurrency } from '../data/currency.data';
 import { getExpenses } from '../utils/expenseUtils';
+import { getCurrentTrip } from '../utils/tripUtils';
 
 export default function CurrenciesConfig() {
  
@@ -23,8 +24,8 @@ export default function CurrenciesConfig() {
     async function fetchSettings() {
       
       try{
-        const result = await getCurrenciesList();
-        setCurrenciesList(result);        
+        const result = await getCurrentTrip();
+        setCurrenciesList(result?.currenciesList || []);        
       }catch (error) {
           console.error('Error fetching currencies list:', error);
       }                      

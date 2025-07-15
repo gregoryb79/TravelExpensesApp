@@ -1,8 +1,8 @@
 import {Currency} from '../types/currency';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getCurrentLocationWithAddress } from './locationUtils';
-import { ca } from 'date-fns/locale';
 import { countryToCurrency, currencyCodeToSymbol } from '../data/currency.data';
+import { getCurrentTrip, saveCurrentTrip } from './tripUtils';
 
 
 
@@ -28,41 +28,48 @@ export async function addToShortList(country: string): Promise<void> {
     if (!currencyCode) {
         throw new Error(`Currency for country ${country} not found`);
     }
-    const currenciesList = await getCurrenciesList();
+    const currTrip = await getCurrentTrip();
+    if (!currTrip) {
+        throw new Error('No current trip found');
+    }
+    const currenciesList = currTrip.currenciesList;
     const currency = currenciesList.find(curr => curr.code === currencyCode);
     if (!currency) {
         const symbol = currencyCodeToSymbol[currencyCode] || currencyCode;       
-        const newCurrency: Currency = {
+        const newCurrency: slimCurrency = {
             code: currencyCode,
             symbol: symbol,           
-            exchangeRate: 1.0 
+            // exchangeRate: 1.0 
         }
-        try{
-            const result = await AsyncStorage.getItem('exchangeRates');
-            if (result) {
-                const parsedRates = JSON.parse(result);
-                newCurrency.exchangeRate = parsedRates[currencyCode];
-                console.log(`Exchange rate for ${currencyCode} found: ${newCurrency.exchangeRate}`);
-            }else {
-                console.log(`No exchange rate found for ${currencyCode}, setting to 1.0`);
-            }
-        }catch (error) {
-            console.error(`Error fetching exchange rates for ${currencyCode}:`, error);
-        }
-        const updatedCurrenciesList = [...currenciesList, newCurrency];
-        await AsyncStorage.setItem('currencies', JSON.stringify(updatedCurrenciesList));
-        console.log(`Currency ${currencyCode} added to short list`);
+        // try{
+        //     const result = await AsyncStorage.getItem('exchangeRates');
+        //     if (result) {
+        //         const parsedRates = JSON.parse(result);
+        //         newCurrency.exchangeRate = parsedRates[currencyCode];
+        //         console.log(`Exchange rate for ${currencyCode} found: ${newCurrency.exchangeRate}`);
+        //     }else {
+        //         console.log(`No exchange rate found for ${currencyCode}, setting to 1.0`);
+        //     }
+        // }catch (error) {
+        //     console.error(`Error fetching exchange rates for ${currencyCode}:`, error);
+        // }
+        currTrip.currenciesList.push(newCurrency);
+        await saveCurrentTrip(currTrip);
+        console.log(`Currency ${currencyCode} added to current trip's currencies list`);        
     }else {
         console.log(`Currency ${currencyCode} already exists in short list`);
     }   
 }
 
-export async function removeFromShortList(currenciesList: string[]): Promise<void> {
-    const allCurrencies = await getCurrenciesList();
-    const updatedCurrenciesList = allCurrencies.filter(currency => !currenciesList.includes(currency.code));
+export async function removeFromShortList(currenciesToRemove: string[]): Promise<void> {
+    const currTrip = await getCurrentTrip();
+    if (!currTrip) {
+        throw new Error('No current trip found');
+    }
+    currTrip.currenciesList = currTrip.currenciesList.filter(currency => !currenciesToRemove.includes(currency.code));
     try {
-        await AsyncStorage.setItem('currencies', JSON.stringify(updatedCurrenciesList));
-        console.log('Short list updated, removed currencies:', currenciesList);
+        await saveCurrentTrip(currTrip);
+        console.log(`Current trip's currencies list updated, removed currencies:`, currenciesToRemove);
     } catch (error) {
         console.error('Error updating short list:', error);
     }
@@ -179,25 +186,25 @@ export async function setupData() {
     }       
 }
 
-export async function getBasicCurrency() : Promise<Currency> {
-    const result = await AsyncStorage.getItem('baseCurrency');
-    if (!result) {
-        throw new Error('Base currency not found in AsyncStorage');
-    }    
-    const baseCurrencie = JSON.parse(result);    
-    console.log('Base currency retrieved:', baseCurrencie);
-    return baseCurrencie;
-}
+// export async function getBasicCurrency() : Promise<Currency> {
+//     const result = await AsyncStorage.getItem('baseCurrency');
+//     if (!result) {
+//         throw new Error('Base currency not found in AsyncStorage');
+//     }    
+//     const baseCurrencie = JSON.parse(result);    
+//     console.log('Base currency retrieved:', baseCurrencie);
+//     return baseCurrencie;
+// }
 
-export async function getLocalCurrency() : Promise<Currency> {
-    const result = await AsyncStorage.getItem('localCurrency');
-    if (!result) {
-        throw new Error('Base currency not found in AsyncStorage');
-    }    
-    const localCurrencie = JSON.parse(result);    
-    console.log('Local currency retrieved:', localCurrencie);
-    return localCurrencie;
-}
+// export async function getLocalCurrency() : Promise<Currency> {
+//     const result = await AsyncStorage.getItem('localCurrency');
+//     if (!result) {
+//         throw new Error('Base currency not found in AsyncStorage');
+//     }    
+//     const localCurrencie = JSON.parse(result);    
+//     console.log('Local currency retrieved:', localCurrencie);
+//     return localCurrencie;
+// }
 
 const defaultCurrencies: slimCurrency[] = [
   { code: 'USD', symbol: '$' },
