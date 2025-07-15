@@ -147,6 +147,7 @@ export default function HomeScreen() {
             description={description}
             onDescriptionChangeText={setDescription}
             onSubmit={handleExpenceSubmit}
+            buttonText="Add Expense"
         />
         
         <View style={styles.recentExpencesContainter}>

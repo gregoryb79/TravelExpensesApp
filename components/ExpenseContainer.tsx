@@ -17,12 +17,13 @@ type ExpenseContainerProps = {
     categories: string[];
     description: string;
     onDescriptionChangeText: (description: string) => void;
+    buttonText: string;
     onSubmit: () => void;
 }
 
 
 export function ExpenseContainer({amount,onAmountChangeText,currency,onCurrencyValueChange,currenciesList, 
-                 category, onCategoryValueChange,categories, description, onDescriptionChangeText,onSubmit}: ExpenseContainerProps) {
+                 category, onCategoryValueChange,categories, description, onDescriptionChangeText, onSubmit, buttonText}: ExpenseContainerProps) {
   return (
     <View style={styles.addExpenseContainter}>
             <View style={styles.amountContainer}>
@@ -65,7 +66,7 @@ export function ExpenseContainer({amount,onAmountChangeText,currency,onCurrencyV
                     placeholder="Expense description"
                 />
             </View>           
-            <MainButton label="Add Expense" onPress={onSubmit} extraStyles={{ minWidth: '60%', marginBottom: spacing.md }}/>            
+            <MainButton label={buttonText} onPress={onSubmit} extraStyles={{ minWidth: '60%', marginBottom: spacing.md }}/>            
         </View>
   );
 }

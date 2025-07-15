@@ -185,6 +185,7 @@ export default function ExpensesScreen() {
             description={descriptionToEdit}
             onDescriptionChangeText={setDescriptionToEdit}
             onSubmit={handleEditedExpenseSubmit}
+            buttonText="Save Changes"
           />
 
         </View>
