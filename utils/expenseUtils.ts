@@ -8,7 +8,7 @@ import { getCurrentTrip, saveCurrentTrip } from './tripUtils';
 
 export const defaultExpenseCategories = ["Groceries", "Souvenirs", "Eating Out & TA", "Beer and Coffee", "Gas + Parking", "Attractions"];
 
-export async function addExpense(amount: string, description: string, category: string, currency: slimCurrency) {
+export async function addExpense(amount: string, description: string, category: string, currency: slimCurrency): Promise<void> {
   
   if (!amount || !description || !category || !currency) {
     throw new Error('Please fill in all fields');
@@ -30,6 +30,33 @@ export async function addExpense(amount: string, description: string, category: 
   console.log('Expences length before adding:', currentTrip?.expenses.length);
   currentTrip?.expenses.unshift(newExpense);  
   console.log('Expences length after adding:', currentTrip?.expenses.length);
+  await saveCurrentTrip(currentTrip);
+}
+
+export async function editExpense(expenseId: string, amount: string, description: string, category: string, currency: slimCurrency): Promise<void> {
+  
+  if (!expenseId || !amount || !description || !category || !currency) {
+    throw new Error('Please fill in all fields');
+  }
+  
+  const currentTrip = await getCurrentTrip();
+  if (!currentTrip) {
+    throw new Error('No current trip found');
+  }
+  
+  const expenseIndex = currentTrip.expenses.findIndex(exp => exp.id === expenseId);
+  if (expenseIndex === -1) {
+    throw new Error('Expense not found');
+  }
+  
+  currentTrip.expenses[expenseIndex] = {
+    ...currentTrip.expenses[expenseIndex],
+    amount: parseFloat(amount),
+    description,
+    category,
+    currency: currency.code,    
+  };
+  
   await saveCurrentTrip(currentTrip);
 }
 

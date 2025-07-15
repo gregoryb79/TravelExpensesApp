@@ -125,9 +125,7 @@ export default function HomeScreen() {
             <Text>Initializing app...</Text>        
         </View>
         );
-    }
-
-    // debugAsyncStorage();
+    }    
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>      
