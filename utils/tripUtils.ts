@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Trip } from '../types/trip';
 import { Currency } from '../types/currency';
 import uuid from 'react-native-uuid';
-import { slimCurrency } from './currencyUtils';
+import { getCurrencies, slimCurrency } from './currencyUtils';
 import { Expense } from '../types/expense';
 
 export async function getCurrentTrip() : Promise<Trip | null> {
@@ -20,6 +20,35 @@ export async function getCurrentTrip() : Promise<Trip | null> {
     console.error('Error fetching current trip:', error);
     return null;
   } 
+}
+
+export function getNewTrip(): Trip {
+  const currenciesList = getCurrencies();
+  return {
+    id: uuid.v4() as string,
+    name: '',
+    baseCurrency: currenciesList[0],
+    localCurrency: currenciesList[0],
+    currenciesList: currenciesList,
+    expenses: [] as Expense[],
+    created_at: new Date().toISOString()
+  };
+}
+
+export async function removeFromTrips(tripsList: string[]): Promise<void> {
+    
+    try {
+        const allTrips = await getTrips();
+        const updatedTrips = allTrips.filter(trip => !tripsList.includes(trip.id));
+        await AsyncStorage.setItem('allTrips', JSON.stringify(updatedTrips));
+        console.log('Trips updated successfully');
+        if (updatedTrips.length == 0) {         
+            await AsyncStorage.removeItem('currentTrip');
+            console.log('No trips left, current trip removed');
+        }        
+    } catch (error) {
+        console.error('Error updating expenses:', error);
+    }
 }
 
 export async function saveCurrentTrip(currentTrip : Trip): Promise<void> {

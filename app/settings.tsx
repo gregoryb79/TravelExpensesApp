@@ -4,7 +4,7 @@ import { colors, typography, spacing, borderRadius } from '../styles/tokens';
 import { styles } from '../styles/styles';
 import { useCallback, useEffect, useState } from 'react';
 import { Trip } from '../types/trip';
-import { getCurrentTrip, getTrips, saveTrip } from '../utils/tripUtils';
+import { getCurrentTrip, getTrips, saveTrip, getNewTrip, removeFromTrips, saveCurrentTrip } from '../utils/tripUtils';
 import { Link, router, useFocusEffect } from 'expo-router';
 import { getCurrenciesList, slimCurrency } from '../utils/currencyUtils';
 import { MainButton } from '../components/MainButton';
@@ -35,6 +35,8 @@ export default function SettingsScreen() {
           console.log('Local currency:', result.localCurrency);
           setBaseCurrency(result.baseCurrency);
           console.log('Base currency:', result.baseCurrency);
+          console.log('Currencies list:', result.currenciesList.length);
+          setCurrenciesList(result.currenciesList);
         }else {
           console.log('No current trip found');
           const result = await getCurrenciesList();
@@ -84,6 +86,74 @@ export default function SettingsScreen() {
     }    
   }
 
+  function handleNewTrip() {
+    const newTrip = getNewTrip();
+    setTripName(newTrip.name);
+    setLocalCurrency(newTrip.currenciesList[0]);
+    setBaseCurrency(newTrip.currenciesList[0]);
+    setCurrenciesList(newTrip.currenciesList);    
+    setCurrTrip(newTrip);
+  }
+
+  const [selectedTrips, setSelectedTrips] = useState<string[]>([]);
+  function handleTripSelect(tripId: string) {
+    console.log('Selected trip:', tripId);
+    setSelectedTrips(prevSelected => {
+        if (prevSelected.includes(tripId)) {            
+            return prevSelected.filter(code => code !== tripId);
+        } else {           
+            return [...prevSelected, tripId];
+        }
+    });    
+  }
+
+  async function handleRemoveFromTrips() {
+      if (selectedTrips.length === 0) {
+        console.warn('No trips selected for removal.');
+        return;
+      }
+      
+      try {
+        await removeFromTrips(selectedTrips);
+      } catch (error) {
+        console.error('Error removing expenses:', error); 
+        return;
+      }
+      try{
+        const result = await getTrips();
+        setListOfTrips(result);        
+        setSelectedTrips([]); // Clear selection after removal
+      }catch (error) {
+          console.error('Error fetching trips list:', error);
+      }
+      // await debugAsyncStorage();
+  }
+
+  async function switchTrip() {
+    if (selectedTrips.length !== 1) {
+      console.warn('Please select exactly one trip to switch to.');
+      return;
+    }
+    
+    const selectedTripId = selectedTrips[0];
+    const selectedTrip = listOfTrips.find(trip => trip.id === selectedTripId);
+    
+    if (selectedTrip) {
+      await saveCurrentTrip(selectedTrip);
+      setCurrTrip(selectedTrip);
+      setTripName(selectedTrip.name);
+      setLocalCurrency(selectedTrip.localCurrency);
+      setBaseCurrency(selectedTrip.baseCurrency);
+      setCurrenciesList(selectedTrip.currenciesList);
+
+      setSelectedTrips([]);
+      // router.push('/expenses'); // Navigate to expenses screen
+    } else {
+      console.error('Selected trip not found');
+    }
+  }
+
+
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}> 
       
@@ -101,7 +171,7 @@ export default function SettingsScreen() {
               <Text style={styles.text_md}>Home Currency:</Text>
               <CurrencyPicker 
                   currency={baseCurrency} 
-                  currenciesList={currTrip?.currenciesList||[]} 
+                  currenciesList={currenciesList} 
                   extraStyles={{width: typography.md*7}}
                   onValueChange={setBaseCurrency} 
               />            
@@ -111,7 +181,7 @@ export default function SettingsScreen() {
               <Text style={styles.text_md}>Travel Currency:</Text>
               <CurrencyPicker 
                   currency={localCurrency} 
-                  currenciesList={currTrip?.currenciesList||[]} 
+                  currenciesList={currenciesList} 
                   extraStyles={{width: typography.md*7}}
                   onValueChange={setLocalCurrency} 
               />           
@@ -127,21 +197,31 @@ export default function SettingsScreen() {
         <Text style={[styles.h3, styles.padding_bottom_10]}>All Trips</Text>
         <ScrollView>
             {(listOfTrips.length > 0) && listOfTrips.map((trip) => (
-              <View key={trip.id} style={styles.listItem}>
-                  <Text style={styles.text_md}>{trip.name}</Text>
-                  <Text style={styles.text_md}>{new Date(trip.created_at).toLocaleDateString()}</Text>                           
-              </View>
+              <TouchableOpacity key={trip.id} style={styles.expenseListItem}
+                onPress={() => handleTripSelect(trip.id)}> 
+                <View  style={styles.listItem}>
+                  <Text style={[styles.text_md, selectedTrips.includes(trip.id) && styles.selectedItem]}>{trip.name}</Text>
+                  <Text style={[styles.text_md, selectedTrips.includes(trip.id) && styles.selectedItem]}>{new Date(trip.created_at).toLocaleDateString()}</Text>                           
+                </View>
+              </TouchableOpacity>
+              
             ))}   
             {(listOfTrips.length === 0) && <Text style={styles.h3}>No trips available. Create a new trip.</Text>}             
         </ScrollView>
         <View style={styles.buttonContainer}>
           <MainButton
             label="New Trip" 
-            onPress={() => {}}            
+            onPress={handleNewTrip}            
           />
           <MainButton
-            label="Delete Selected" 
-            onPress={() => {}}            
+            label="Select" 
+            onPress={switchTrip} 
+            disabled={selectedTrips.length != 1}           
+          />
+          <MainButton
+            label="Delete" 
+            onPress={handleRemoveFromTrips}      
+            disabled={selectedTrips.length === 0}      
           />
         </View>
       </View>

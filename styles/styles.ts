@@ -176,11 +176,12 @@ export const styles = StyleSheet.create({
         margin: spacing.sm,
     },
     expensesListContainer:{
-        maxHeight: '80%',
+        height: '80%',
         backgroundColor: colors.surfaceSecondary,
         borderRadius: borderRadius.base,
         padding: spacing.md,
         margin: spacing.sm,
+        marginBottom: spacing.lg,
     },
     expenseListItem: {
         padding: spacing.xs,
@@ -191,5 +192,18 @@ export const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',               
         marginBottom: spacing.sm,
-    },   
+    },  
+    editExpenseContainer: {
+        position: 'absolute',
+        top: '25%',
+        left: '5%',
+        height: '50%',
+        width: '90%',        
+        backgroundColor: colors.surface,
+        borderColor: colors.border,
+        borderWidth: 1,
+        borderRadius: borderRadius.base,
+        padding: spacing.md,
+        gap: spacing.sm,
+    }, 
 });
