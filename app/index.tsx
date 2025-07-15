@@ -1,5 +1,5 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, ActivityIndicator } from 'react-native';
-import { Link, useFocusEffect } from 'expo-router';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Modal } from 'react-native';
+import { Link, router, useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useState } from 'react';
 import { getBasicCurrency, getCurrencies, getCurrenciesList, getLocalCurrency, slimCurrency } from '../utils/currencyUtils';
@@ -35,35 +35,28 @@ export default function HomeScreen() {
     const [description, setDescription] = useState('');
     const [category, setCategory] = useState('');
     const [currency, setCurrency] = useState<slimCurrency>();
+    const [noTripModalVisible, setNoTripModalVisible] = useState(false);
     
     useFocusEffect(useCallback(() => {
-        async function fetchSettings() {
-
-            let localCurrencyResult: slimCurrency | undefined;
-            let baseCurrencyResult: slimCurrency | undefined;
+        async function fetchSettings() {            
 
             try{
                 const result = await getCurrentTrip();
                 if (result) {
-                    setCurrentTrip(result);
-                    localCurrencyResult = result.localCurrency;
-                    baseCurrencyResult = result.baseCurrency;
+                    setCurrentTrip(result);                    
                     setCurrency(result.localCurrency);
-                    console.log(`Current trip set: ${result.name}, Local Currency: ${localCurrencyResult?.code}, Base Currency: ${baseCurrencyResult?.code}`);
+                    console.log(`Current trip set: ${result.name}, Local Currency: ${result.localCurrency?.code}, Base Currency: ${result.baseCurrency?.code}`);
+                    const total = await calcTotal(result);
+                    setTotalSpent(total);
+                    console.log('Total spent:', total);
                 } else {
                     console.log('No current trip set');
+                    setNoTripModalVisible(true);
                 }
             }catch (error) {
                 console.error('Error fetching current trip:', error);
-            }
-            
-            try {                
-                const total = currentTrip ? await calcTotal(currentTrip) : 0;
-                setTotalSpent(total);
-                console.log('Total spent:', total);
-            } catch (error) {
-                console.error('Error fetching total spent:', error);
             }            
+                        
             try{
                 const result = await getCategories();
                 setCategories(result);
@@ -128,7 +121,25 @@ export default function HomeScreen() {
     }    
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>      
+    <SafeAreaView style={styles.container} edges={['bottom']}>   
+        <Modal 
+            visible={noTripModalVisible}
+            animationType="slide"
+            transparent={true}>
+            <View style={styles.noTripContainer}>
+                <Text style={[styles.h3, styles.text_center]}>No Trip Set</Text>
+                <Text style={styles.text_md}>Please set a trip to start adding expenses.</Text>
+                <MainButton 
+                    label="Set Trip" 
+                    onPress={() => {
+                        setNoTripModalVisible(false);
+                        router.push('/settings');                        
+                    }} 
+                    extraStyles={{ minWidth: '60%' }}
+                />
+            </View>
+
+        </Modal>   
       
         <View style={styles.quickStats}>
             <Text style={styles.statsTitle}>{`💰 Total Spent: ${currentTrip?.baseCurrency.symbol} ${totalSpent.toFixed(2)}`}</Text>

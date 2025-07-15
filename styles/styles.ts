@@ -1,3 +1,4 @@
+import { te } from 'date-fns/locale';
 import { colors, typography, spacing, borderRadius } from '../styles/tokens';
 import { StyleSheet } from 'react-native';
 
@@ -20,6 +21,9 @@ export const styles = StyleSheet.create({
     text_md: {
         fontSize: typography.md,
         color: colors.textPrimary,
+    },
+    text_center: {
+        textAlign: 'center',
     },
     backgroundWhite:{
         backgroundColor: colors.textWhite,
@@ -175,6 +179,12 @@ export const styles = StyleSheet.create({
         padding: spacing.md,
         margin: spacing.sm,
     },
+    expensesHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingBottom: spacing.sm,
+    },
     expensesListContainer:{
         height: '80%',
         backgroundColor: colors.surfaceSecondary,
@@ -217,4 +227,18 @@ export const styles = StyleSheet.create({
         borderRadius: borderRadius.sm,
         paddingTop: spacing.xs*1.7,
     },  
+    noTripContainer: {
+        position: 'absolute',
+        top: '10%',
+        left: '5%',
+        height: '25%',
+        width: '90%',
+        backgroundColor: colors.surface,
+        borderColor: colors.border,
+        borderWidth: 1,
+        borderRadius: borderRadius.base,
+        padding: spacing.md,
+        gap: spacing.sm,
+    }
+
 });

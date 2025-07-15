@@ -3,7 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, typography, spacing, borderRadius } from '../styles/tokens';
 import { styles } from '../styles/styles';
 import { useEffect, useState } from 'react';
-import { addExpense, editExpense, getAllExpenses, getCategories, removeFromExpenses } from '../utils/expenseUtils';
+import { addExpense, editExpense, exportExpensesToCSV, getAllExpenses, getCategories, removeFromExpenses } from '../utils/expenseUtils';
 import { Expense } from '../types/expense';
 import { MainButton } from '../components/MainButton';
 import { debugAsyncStorage } from '../utils/debug';
@@ -130,8 +130,14 @@ export default function ExpensesScreen() {
   }
   
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>  
-      <Text style={styles.title}>Expenses List</Text>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
+      <View style={styles.expensesHeader}>
+        <Text style={styles.title}>Expenses List</Text>
+        <TouchableOpacity onPress={() => exportExpensesToCSV(expences)}>
+          <Icon name="share" size={30} color={colors.primaryBlue}/>
+        </TouchableOpacity>
+      </View>
+      
 
       <View>        
         <ScrollView style={styles.expensesListContainer}>

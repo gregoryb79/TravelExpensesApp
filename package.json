@@ -27,7 +27,9 @@
     "react-native-uuid": "^2.0.3",
     "react-native-vector-icons": "^10.2.0",
     "react-native-web": "^0.20.0",
-    "expo-location": "~18.1.6"
+    "expo-location": "~18.1.6",
+    "expo-file-system": "~18.1.11",
+    "expo-sharing": "~13.1.5"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

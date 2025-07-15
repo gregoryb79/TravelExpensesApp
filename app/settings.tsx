@@ -10,6 +10,7 @@ import { getCurrenciesList, slimCurrency } from '../utils/currencyUtils';
 import { MainButton } from '../components/MainButton';
 import { CurrencyPicker } from '../components/CurrencyPicker';
 import SettingsButton from '../components/SettingsButton';
+import { se } from 'date-fns/locale';
 
 export default function SettingsScreen() {
 
@@ -20,7 +21,7 @@ export default function SettingsScreen() {
   const [localCurrency, setLocalCurrency] = useState<slimCurrency>();
   const [baseCurrency, setBaseCurrency] = useState<slimCurrency>();
   const [currenciesList, setCurrenciesList] = useState<slimCurrency[]>([]);  
-
+  const [newTrip, setNewTrip] = useState<boolean>(false);
   
   useFocusEffect(useCallback(() => {
 
@@ -40,6 +41,7 @@ export default function SettingsScreen() {
         }else {
           console.log('No current trip found');
           const result = await getCurrenciesList();
+          setNewTrip(true);
           setCurrenciesList(result);        
           setLocalCurrency(result[0]);
           setBaseCurrency(result[0]);
@@ -71,23 +73,25 @@ export default function SettingsScreen() {
   
     try {
         await saveTrip( currTrip?.id || '', tripName, baseCurrency, localCurrency, currenciesList);        
+        router.push('/'); 
     } catch (error) {   
         console.error('Error saving trip:', error);
         alert('Error saving trip. Please try again.');
     }        
-    try {
-      const result = await getTrips();
-      if (result) {
-        setListOfTrips(result);
-        console.log('List of trips length:', result.length);
-      }
-    } catch (error) {
-      console.error('Error fetching list of trips:', error);
-    }    
+    // try {
+    //   const result = await getTrips();
+    //   if (result) {
+    //     setListOfTrips(result);
+    //     console.log('List of trips length:', result.length);
+    //   }
+    // } catch (error) {
+    //   console.error('Error fetching list of trips:', error);
+    // }    
   }
 
   function handleNewTrip() {
     const newTrip = getNewTrip();
+    setNewTrip(true);
     setTripName(newTrip.name);
     setLocalCurrency(newTrip.currenciesList[0]);
     setBaseCurrency(newTrip.currenciesList[0]);
@@ -121,7 +125,18 @@ export default function SettingsScreen() {
       }
       try{
         const result = await getTrips();
-        setListOfTrips(result);        
+        setListOfTrips(result); 
+        if (result.length == 0) {        
+          console.log('No trips left found');
+          const result = await getCurrenciesList();
+          setCurrenciesList(result);        
+          setLocalCurrency(result[0]);
+          setBaseCurrency(result[0]);
+          setCurrTrip(undefined);
+          setTripName('');
+          setNewTrip(true);
+        }
+        
         setSelectedTrips([]); // Clear selection after removal
       }catch (error) {
           console.error('Error fetching trips list:', error);
@@ -147,7 +162,7 @@ export default function SettingsScreen() {
       setCurrenciesList(selectedTrip.currenciesList);
 
       setSelectedTrips([]);
-      // router.push('/expenses'); // Navigate to expenses screen
+      router.push('/'); 
     } else {
       console.error('Selected trip not found');
     }
@@ -189,7 +204,7 @@ export default function SettingsScreen() {
           </View>
                 
           <View style={styles.buttonContainer}>
-            <MainButton label="Update Trip" onPress={handleTripSubmit} extraStyles={{minWidth: '60%'}}/>          
+            <MainButton label={!newTrip ? "Update Trip" : "Create Trip"} onPress={handleTripSubmit} extraStyles={{minWidth: '60%'}}/>          
           </View>
       </View>      
 
@@ -211,7 +226,8 @@ export default function SettingsScreen() {
         <View style={styles.buttonContainer}>
           <MainButton
             label="New Trip" 
-            onPress={handleNewTrip}            
+            onPress={handleNewTrip}
+            disabled={listOfTrips.length === 0} // Disable if any trips are selected            
           />
           <MainButton
             label="Select" 

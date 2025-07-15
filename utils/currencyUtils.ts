@@ -1,6 +1,5 @@
 import {Currency} from '../types/currency';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { setUpExpenses } from './expenseUtils';
 import { getCurrentLocationWithAddress } from './locationUtils';
 import { ca } from 'date-fns/locale';
 import { countryToCurrency, currencyCodeToSymbol } from '../data/currency.data';
@@ -13,14 +12,6 @@ export type slimCurrency = Omit<Currency, 'exchangeRate'>;
 export function getCurrencies(): slimCurrency[] {
   return defaultCurrencies;
 }
-
-// export function getCurrencyByCountry(country: string): string {
-//   return countryToCurrency[country] || 'USD'; // Default to USD if country not found
-// }
-
-// export function getCountriesList(): string[] {
-//     return Object.keys(countryToCurrency);
-// }
 
 export async function getCurrenciesList(): Promise<Currency[]>{
     const result = await AsyncStorage.getItem('currencies'); 
