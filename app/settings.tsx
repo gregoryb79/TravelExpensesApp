@@ -4,13 +4,14 @@ import { colors, typography, spacing, borderRadius } from '../styles/tokens';
 import { styles } from '../styles/styles';
 import { useCallback, useEffect, useState } from 'react';
 import { Trip } from '../types/trip';
-import { getCurrentTrip, getTrips, saveTrip, getNewTrip, removeFromTrips, saveCurrentTrip } from '../utils/tripUtils';
+import { getCurrentTrip, getTrips, saveTrip, getNewTrip, removeFromTrips, saveCurrentTrip, backupAllTripsToFile, importAllTripsFromBackup } from '../utils/tripUtils';
 import { Link, router, useFocusEffect } from 'expo-router';
 import { getCurrenciesList, slimCurrency } from '../utils/currencyUtils';
 import { MainButton } from '../components/MainButton';
 import { CurrencyPicker } from '../components/CurrencyPicker';
 import SettingsButton from '../components/SettingsButton';
 import { se } from 'date-fns/locale';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
 export default function SettingsScreen() {
 
@@ -119,6 +120,9 @@ export default function SettingsScreen() {
       
       try {
         await removeFromTrips(selectedTrips);
+        if (currTrip && selectedTrips.includes(currTrip.id)) {
+          handleNewTrip()
+        }
       } catch (error) {
         console.error('Error removing expenses:', error); 
         return;
@@ -168,6 +172,25 @@ export default function SettingsScreen() {
     }
   }
 
+  async function handleImportFromBackUp() {
+    try {
+      await importAllTripsFromBackup();
+
+    } catch (error) {
+      console.error('Error importing trips from backup:', error);
+      alert('Error importing trips from backup. Please try again.');
+    }
+    try {
+      const result = await getTrips();
+      if (result) {
+        setListOfTrips(result);
+        console.log('List of trips length:', result.length);
+      }
+    } catch (error) {
+      console.error('Error fetching list of trips:', error);
+    }      
+  }
+
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}> 
@@ -209,7 +232,18 @@ export default function SettingsScreen() {
       </View>      
 
       <View style={styles.recentTripsContainter}>
-        <Text style={[styles.h3, styles.padding_bottom_10]}>All Trips</Text>
+        <View style={styles.expensesHeader}>
+          <Text style={[styles.h3, styles.padding_bottom_10]}>All Trips</Text>
+          <View style={styles.expensesHeader}>  
+            <TouchableOpacity onPress={backupAllTripsToFile}>
+              <Icon name="backup" size={30} color={colors.primaryBlue}/>                    
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleImportFromBackUp}>
+              <Icon name="download" size={30} color={colors.primaryBlue}/>                    
+            </TouchableOpacity>
+          </View>
+        </View>
+
         <ScrollView>
             {(listOfTrips.length > 0) && listOfTrips.map((trip) => (
               <TouchableOpacity key={trip.id} style={styles.expenseListItem}

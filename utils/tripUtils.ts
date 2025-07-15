@@ -4,6 +4,9 @@ import { Currency } from '../types/currency';
 import uuid from 'react-native-uuid';
 import { getCurrencies, slimCurrency } from './currencyUtils';
 import { Expense } from '../types/expense';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
+import * as DocumentPicker from 'expo-document-picker';
 
 export async function getCurrentTrip() : Promise<Trip | null> {
   try {
@@ -148,6 +151,66 @@ export async function saveTrip(tripId: string, tripName: string, baseCurrency: s
     } catch (error) {
         console.error('Error saving trip:', error);
     }
+}
+
+export async function backupAllTripsToFile() {
+  try {
+    const allTripsString = await AsyncStorage.getItem('allTrips');
+    if (!allTripsString) {
+      alert('No trips to backup.');
+      return;
+    }
+    const fileUri = FileSystem.documentDirectory + 'allTripsBackup.json';
+    await FileSystem.writeAsStringAsync(fileUri, allTripsString, { encoding: FileSystem.EncodingType.UTF8 });
+
+    // Open the share dialog (user can pick Google Drive, email, etc.)
+    await Sharing.shareAsync(fileUri, {
+      mimeType: 'application/json',
+      dialogTitle: 'Backup allTrips to...',
+      UTI: 'public.json'
+    });
+  } catch (error) {
+    console.error('Backup failed:', error);
+    alert('Backup failed: ' + error);
+  }
+}
+
+export async function importAllTripsFromBackup() {
+  try {
+    // Let user pick the backup file
+    const result = await DocumentPicker.getDocumentAsync({
+      type: 'application/json',
+      copyToCacheDirectory: true,
+    });
+
+    if (result.canceled || !result.assets || !result.assets[0]?.uri) {
+      alert('No file selected');
+      return;
+    }
+
+    // Read file contents
+    const fileContent = await FileSystem.readAsStringAsync(result.assets[0].uri, { encoding: FileSystem.EncodingType.UTF8 });
+
+    // Parse and validate JSON
+    let trips;
+    try {
+      trips = JSON.parse(fileContent);
+      if (!Array.isArray(trips)) throw new Error('Invalid backup format');
+    } catch (e) {
+      alert('Invalid backup file');
+      return;
+    }
+
+    const localTrips = await getTrips();
+    const newTrips = trips.filter((importedTrip) => !localTrips.some(localTrip => localTrip.id === importedTrip.id));
+    
+    const mergedTrips = [...localTrips, ...newTrips];
+    await AsyncStorage.setItem('allTrips', JSON.stringify(mergedTrips));
+    alert('Trips imported successfully!');
+  } catch (error) {
+    console.error('Import failed:', error);
+    alert('Import failed: ' + error);
+  }
 }
 
 
