@@ -6,7 +6,7 @@ import uuid from 'react-native-uuid';
 import { Trip } from '../types/trip';
 import { getCurrentTrip, saveCurrentTrip } from './tripUtils';
 
-export const defaultExpenseCategories = ["Groceries", "Souvenirs", "Eating Out & TA", "Beer and Coffee", "Gas + Parking", "Attractions"];
+export const defaultExpenseCategories = ["Groceries", "Souvenirs", "Eating Out & TA", "Beer and Coffee", "Transport & Parking", "Attractions", "Other"];
 
 export async function addExpense(amount: string, description: string, category: string, currency: slimCurrency): Promise<void> {
   
