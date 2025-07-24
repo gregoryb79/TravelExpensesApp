@@ -1,7 +1,17 @@
 import * as Location from 'expo-location';
 import { GeoLocation } from '../types/location';
 
-export async function getCurrentLocation() {
+export type latestLocation = {
+  latitude: number;
+  longitude: number;
+  accuracy: number;
+  timestamp: number;
+  ageMinutes: number; 
+  city: string;
+  country: string;
+};
+
+export async function getLastKnownLocation() {
   try {
     console.log('Requesting current location...');
     const { status } = await Location.requestForegroundPermissionsAsync();
@@ -10,44 +20,33 @@ export async function getCurrentLocation() {
       console.log('Permission to access location was denied');
       return null;
     }
-
-    // 1. Try cached location first (faster)
-    const lastKnown = await Location.getLastKnownPositionAsync({
-      maxAge: 600000, // 10 minutes old is acceptable
-    });
-
-    if (lastKnown) {
-      console.log('Using cached location');
+   
+    const lastKnown = await Location.getLastKnownPositionAsync();
+    if (lastKnown){
+      const ageMs = Date.now() - (lastKnown?.timestamp || 0);
+      console.log(`Last known location is ${lastKnown?.coords.latitude}, ${lastKnown?.coords.longitude} age: ${ageMs / (60*1000)} minutes old`);    
       return {
         latitude: lastKnown.coords.latitude,
         longitude: lastKnown.coords.longitude,
-        city: null,
-        country: null
-      };
+        accuracy: lastKnown.coords.accuracy,
+        ageMinutes: ageMs / (60 * 1000),
+        timestamp: lastKnown.timestamp,        
+      };     
+    }else {
+      console.log('No last known location available');
+      return null;
     }
-
-    
-    const location = await Location.getCurrentPositionAsync({
-      accuracy: Location.Accuracy.Balanced,    
-    });
-
-    return {
-      latitude: location.coords.latitude,
-      longitude: location.coords.longitude,
-      city: null,
-      country: null
-    };
-
   } catch (error) {
-    console.error('Error getting location:', error);
+    console.error('Error getting last known location:', error);
     return null;
   }
+
 }
 
-export async function getCurrentLocationWithAddress(): Promise<GeoLocation | null> {
+export async function getCurrentLocationWithAddress(): Promise<latestLocation | null> {
   try {
     console.log('Requesting current location with address...');
-    const location = await getCurrentLocation();
+    const location = await getLastKnownLocation();
     
     if (!location) return null;
 
@@ -59,14 +58,19 @@ export async function getCurrentLocationWithAddress(): Promise<GeoLocation | nul
 
     if (reverseGeocode.length > 0) {
       const address = reverseGeocode[0];
+      console.log('Reverse geocoding result:', address.country, address.city, location.ageMinutes);
       return {
-        ...location,
-        city: address.city,
-        country: address.country,        
+        latitude: location.latitude,
+        longitude: location.longitude,
+        accuracy: location.accuracy || 10000,
+        timestamp: location.timestamp,
+        ageMinutes: location.ageMinutes,
+        city: address.city || "",
+        country: address.country || "",
       };
     }
 
-    return location;
+    return null;
   } catch (error) {
     console.error('Error getting location with address:', error);
     return null;

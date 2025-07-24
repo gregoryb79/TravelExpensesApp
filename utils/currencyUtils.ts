@@ -3,6 +3,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getCurrentLocationWithAddress } from './locationUtils';
 import { countryToCurrency, currencyCodeToSymbol } from '../data/currency.data';
 import { getCurrentTrip, saveCurrentTrip } from './tripUtils';
+import { Trip } from '../types/trip';
+import { tr } from 'date-fns/locale';
 
 
 
@@ -21,6 +23,36 @@ export async function getCurrenciesList(): Promise<Currency[]>{
     }   
     const currencies:Currency[] = JSON.parse(result);   
     return currencies;
+}
+
+export async function getLocalCurrencyfromLocation(trip: Trip): Promise<Trip> {
+    const location = await getCurrentLocationWithAddress();
+    if (!location || !location.country ) {
+        console.log('No location found, returning trip as is');
+        return trip;
+    }
+    if (location.ageMinutes > 60) {
+        console.log('Location is too old, returning trip as is');
+        return trip;
+    }
+    const country = location.country;
+    const currencyCode = countryToCurrency[country];
+    const symbol = currencyCodeToSymbol[currencyCode];
+    if (!currencyCode || !symbol) {
+        console.log(`No currency found for country ${country}, returning trip as is`);
+        return trip;
+    }
+    const updatedLocalCurrency = {
+        code: currencyCode,
+        symbol: symbol,
+    }
+    trip.localCurrency = updatedLocalCurrency;
+    const existingCurrency = trip.currenciesList.find(curr => curr.code === currencyCode);
+    if (!existingCurrency) {
+        trip.currenciesList.push(updatedLocalCurrency);
+    }
+
+    return trip;
 }
 
 export async function addToShortList(country: string): Promise<void> {
@@ -186,25 +218,6 @@ export async function setupData() {
     }       
 }
 
-// export async function getBasicCurrency() : Promise<Currency> {
-//     const result = await AsyncStorage.getItem('baseCurrency');
-//     if (!result) {
-//         throw new Error('Base currency not found in AsyncStorage');
-//     }    
-//     const baseCurrencie = JSON.parse(result);    
-//     console.log('Base currency retrieved:', baseCurrencie);
-//     return baseCurrencie;
-// }
-
-// export async function getLocalCurrency() : Promise<Currency> {
-//     const result = await AsyncStorage.getItem('localCurrency');
-//     if (!result) {
-//         throw new Error('Base currency not found in AsyncStorage');
-//     }    
-//     const localCurrencie = JSON.parse(result);    
-//     console.log('Local currency retrieved:', localCurrencie);
-//     return localCurrencie;
-// }
 
 const defaultCurrencies: slimCurrency[] = [
   { code: 'USD', symbol: '$' },
@@ -217,164 +230,6 @@ const defaultCurrencies: slimCurrency[] = [
   { code: 'DKK', symbol: 'kr' }
 ];
 
-// const countryToCurrency: {[key: string]: string} = {
-//   'United States': 'USD',
-//   'US': 'USD',
-//   'USA': 'USD',
-//   'Germany': 'EUR',
-//   'France': 'EUR',
-//   'Spain': 'EUR',
-//   'Italy': 'EUR',
-//   'Netherlands': 'EUR',
-//   'Austria': 'EUR',
-//   'Belgium': 'EUR',
-//   'Finland': 'EUR',
-//   'Ireland': 'EUR',
-//   'Luxembourg': 'EUR',
-//   'Portugal': 'EUR',
-//   'Slovenia': 'EUR',
-//   'Slovakia': 'EUR',
-//   'Estonia': 'EUR',
-//   'Latvia': 'EUR',
-//   'Lithuania': 'EUR',
-//   'Malta': 'EUR',
-//   'Cyprus': 'EUR',
-//   'Croatia': 'EUR',
-//   'United Kingdom': 'GBP',
-//   'UK': 'GBP',
-//   'England': 'GBP',
-//   'Scotland': 'GBP',
-//   'Wales': 'GBP',
-//   'Israel': 'ILS',
-//   'Switzerland': 'CHF',
-//   'Hungary': 'HUF',
-//   'Czech Republic': 'CZK',
-//   'Czechia': 'CZK',
-//   'Denmark': 'DKK',
-//   'Canada': 'CAD',
-//   'Australia': 'AUD',
-//   'Japan': 'JPY',
-//   'China': 'CNY',
-//   'India': 'INR',
-//   'Brazil': 'BRL',
-//   'Mexico': 'MXN',
-//   'South Korea': 'KRW',
-//   'Russia': 'RUB',
-//   'Turkey': 'TRY',
-//   'South Africa': 'ZAR',
-//   'Norway': 'NOK',
-//   'Sweden': 'SEK',
-//   'Poland': 'PLN',
-//   'Thailand': 'THB',
-//   'Singapore': 'SGD',
-//   'New Zealand': 'NZD',
-//   'Hong Kong': 'HKD',
-//   'Argentina': 'ARS',
-//   'Chile': 'CLP',
-//   'Colombia': 'COP',
-//   'Peru': 'PEN',
-//   'Egypt': 'EGP',
-//   'Morocco': 'MAD',
-//   'Kenya': 'KES',
-//   'Nigeria': 'NGN',
-//   'Ghana': 'GHS',
-//   'Indonesia': 'IDR',
-//   'Malaysia': 'MYR',
-//   'Philippines': 'PHP',
-//   'Vietnam': 'VND',
-//   'Bangladesh': 'BDT',
-//   'Pakistan': 'PKR',
-//   'Sri Lanka': 'LKR',
-//   'Nepal': 'NPR',
-//   'Myanmar': 'MMK',
-//   'Cambodia': 'KHR',
-//   'Laos': 'LAK',
-//   'Mongolia': 'MNT',
-//   'Kazakhstan': 'KZT',
-//   'Uzbekistan': 'UZS',
-//   'Georgia': 'GEL',
-//   'Armenia': 'AMD',
-//   'Azerbaijan': 'AZN',
-//   'Belarus': 'BYN',
-//   'Ukraine': 'UAH',
-//   'Moldova': 'MDL',
-//   'Romania': 'RON',
-//   'Bulgaria': 'BGN',
-//   'Serbia': 'RSD',
-//   'North Macedonia': 'MKD',
-//   'Albania': 'ALL',
-//   'Montenegro': 'EUR',
-//   'Bosnia and Herzegovina': 'BAM',
-//   'Iceland': 'ISK',
-//   'Greenland': 'DKK',
-//   'Faroe Islands': 'DKK',
-// };
-
-// const currencyCodeToSymbol: {[key: string]: string} = {
-//   'USD': '$',
-//   'EUR': '€',
-//   'GBP': '£',
-//   'JPY': '¥',
-//   'CNY': '¥',
-//   'ILS': '₪',
-//   'CHF': 'CHF',
-//   'CAD': 'C$',
-//   'AUD': 'A$',
-//   'NZD': 'NZ$',
-//   'HKD': 'HK$',
-//   'SGD': 'S$',
-//   'SEK': 'kr',
-//   'NOK': 'kr',
-//   'DKK': 'kr',
-//   'PLN': 'zł',
-//   'CZK': 'Kč',
-//   'HUF': 'Ft',
-//   'RUB': '₽',
-//   'INR': '₹',
-//   'KRW': '₩',
-//   'THB': '฿',
-//   'MYR': 'RM',
-//   'PHP': '₱',
-//   'IDR': 'Rp',
-//   'VND': '₫',
-//   'BRL': 'R$',
-//   'MXN': '$',
-//   'ARS': '$',
-//   'CLP': '$',
-//   'COP': '$',
-//   'PEN': 'S/',
-//   'TRY': '₺',
-//   'ZAR': 'R',
-//   'EGP': '£',
-//   'MAD': 'د.م.',
-//   'KES': 'KSh',
-//   'NGN': '₦',
-//   'GHS': '₵',
-//   'UAH': '₴',
-//   'RON': 'lei',
-//   'BGN': 'лв',
-//   'HRK': 'kn',
-//   'RSD': 'дин',
-//   'MKD': 'ден',
-//   'ALL': 'L',
-//   'BAM': 'KM',
-//   'ISK': 'kr',
-//   'GEL': '₾',
-//   'AMD': '֏',
-//   'AZN': '₼',
-//   'BYN': 'Br',
-//   'MDL': 'L',
-//   'KZT': '₸',
-//   'UZS': 'soʻm',
-//   'BDT': '৳',
-//   'PKR': '₨',
-//   'LKR': '₨',
-//   'NPR': '₨',
-//   'MMK': 'K',
-//   'KHR': '៛',
-//   'LAK': '₭',
-//   'MNT': '₮'
-// };
 
 
 

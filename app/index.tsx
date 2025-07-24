@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Activi
 import { Link, router, useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useState } from 'react';
-import {  slimCurrency } from '../utils/currencyUtils';
+import {  getLocalCurrencyfromLocation, slimCurrency } from '../utils/currencyUtils';
 // import { Currency } from '../types/currency';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { addExpense, calcTotal, getCategories, } from '../utils/expenseUtils';
@@ -22,9 +22,9 @@ import { styles } from '../styles/styles';
 
 export default function HomeScreen() {
 
-    const [baseCurrency, setBaseCurrency] = useState<slimCurrency>();
-    const [localCurrency, setLocalCurrency] = useState<slimCurrency>();
-    const [recentExpenses, setRecentExpenses] = useState<Expense[]>([]); 
+    // const [baseCurrency, setBaseCurrency] = useState<slimCurrency>();
+    // const [localCurrency, setLocalCurrency] = useState<slimCurrency>();
+    // const [recentExpenses, setRecentExpenses] = useState<Expense[]>([]); 
     const [totalSpent, setTotalSpent] = useState<number>(0);
     const [categories, setCategories] = useState<string[]>([]);
     const [currenciesList, setCurrenciesList] = useState<slimCurrency[]>([]);
@@ -41,11 +41,12 @@ export default function HomeScreen() {
         async function fetchSettings() {            
 
             try{
-                const result = await getCurrentTrip();
+                const tripResult = await getCurrentTrip();
+                const result = tripResult ? await getLocalCurrencyfromLocation(tripResult) : null;                
                 if (result) {
-                    setCurrentTrip(result);                    
+                    setCurrentTrip(result);                                        
                     setCurrency(result.localCurrency);
-                    console.log(`Current trip set: ${result.name}, Local Currency: ${result.localCurrency?.code}, Base Currency: ${result.baseCurrency?.code}`);
+                    console.log(`Current trip set: ${result.name}, Local Currency: ${result.localCurrency.code}, Base Currency: ${result.baseCurrency.code}`);
                     const total = await calcTotal(result);
                     setTotalSpent(total);
                     console.log('Total spent:', total);
