@@ -222,6 +222,7 @@ export const styles = StyleSheet.create({
         right: spacing.sm,
         width: typography.md*2.5,
         height: typography.md*2.5,
+        zIndex: 100,
         borderColor: colors.border,
         borderWidth: 1,        
         borderRadius: borderRadius.sm,

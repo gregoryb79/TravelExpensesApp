@@ -175,7 +175,10 @@ export default function ExpensesScreen() {
         transparent={true}
         >
         <View style={styles.editExpenseContainer}>
-          <TouchableOpacity style={styles.closeButton} onPress={() => setEditExpenseVisible(false)}>            
+          <TouchableOpacity style={styles.closeButton} onPress={() => {
+                                                                setEditExpenseVisible(false);
+                                                                setSelectedExpenses([]);
+                                                              }}>
               <Icon name="close" size={40} color={colors.primaryBlue}/>            
           </TouchableOpacity>
           <Text style={[styles.h3, styles.padding_bottom_10]}>Edit Expense</Text>

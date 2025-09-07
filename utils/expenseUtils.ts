@@ -163,7 +163,14 @@ function expensesToCSV(expenses: Expense[]): string {
 }
 
 export async function exportExpensesToCSV(expenses: Expense[]) {
+  console.log('Exporting expenses to CSV:', expenses.length, ' rows');
+  if (expenses.length === 0) {
+    console.warn('No expenses to export');
+    return;
+  }
   const csv = expensesToCSV(expenses);
+  await FileSystem.writeAsStringAsync(FileSystem.documentDirectory + 'expenses.csv', csv, { encoding: FileSystem.EncodingType.UTF8 });
+  console.log('Expenses CSV file created');
   const fileUri = FileSystem.documentDirectory + 'expenses.csv';  
   await Sharing.shareAsync(fileUri, {
     mimeType: 'text/csv',
